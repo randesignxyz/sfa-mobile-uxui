@@ -3046,7 +3046,7 @@
   background: #dedede;
 }
 
-.so-th-num, .so-th-item, .so-th-code, .so-th-tier, .so-th-qty, .so-th-price, .so-th-total {
+.so-th-num, .so-th-item, .so-th-code, .so-th-tier, .so-th-qty, .so-th-price, .so-th-discount, .so-th-total {
   padding: 7px 8px;
   font-weight: 700;
   color: #000000;
@@ -3072,7 +3072,7 @@
 
 .so-th-tier {
   text-align: center;
-  width: 60px;
+  width: 54px;
 }
 
 .so-th-qty {
@@ -3080,6 +3080,10 @@
 }
 
 .so-th-price {
+  text-align: right;
+}
+
+.so-th-discount {
   text-align: right;
 }
 
@@ -3101,7 +3105,7 @@
   background: #fafaf5;
 }
 
-.so-td-num, .so-td-item, .so-td-code, .so-td-tier, .so-td-qty, .so-td-price, .so-td-total {
+.so-td-num, .so-td-item, .so-td-code, .so-td-tier, .so-td-qty, .so-td-price, .so-td-discount, .so-td-total {
   padding: 8px 8px;
   color: #000000;
   font-size: 11.5px;
@@ -3132,18 +3136,6 @@
   font-size: 10px;
   color: #71717a;
   font-family: monospace;
-}
-
-.so-promo-tag {
-  display: inline-block;
-  font-size: 9px;
-  font-weight: 700;
-  text-transform: uppercase;
-  background: #fef08a;
-  color: #854d0e;
-  padding: 1px 5px;
-  border-radius: 4px;
-  letter-spacing: 0.02em;
 }
 
 .so-td-code {
@@ -3206,11 +3198,29 @@
 
 .so-td-price {
   text-align: right;
+  white-space: nowrap;
+}
+
+.so-td-discount {
+  text-align: right;
+  white-space: nowrap;
+}
+
+.so-disc-zero {
+  color: #71717a;
+  font-size: 11px;
+}
+
+.so-disc-active {
+  color: #059669;
+  font-weight: 600;
+  font-size: 11.5px;
 }
 
 .so-td-total {
   text-align: right;
   font-weight: 600;
+  white-space: nowrap;
 }
 
 .sale-order-summary-wrapper {

@@ -73,11 +73,15 @@ export function OrderInvoicePreview({
       qty: number;
       unit: string;
       unitPrice: number;
+      discount: number;
       totalPrice: number;
       isPromo?: boolean;
     }[] = [];
 
     cartLines.forEach((item) => {
+      // Calculate line discount if any
+      const lineDiscount = 0.0;
+
       rows.push({
         index: index++,
         name: item.productName,
@@ -86,6 +90,7 @@ export function OrderInvoicePreview({
         qty: item.quantity,
         unit: item.unit || 'Case',
         unitPrice: item.unitPrice,
+        discount: lineDiscount,
         totalPrice: item.totalPrice,
       });
 
@@ -100,6 +105,7 @@ export function OrderInvoicePreview({
           qty: p.quantity,
           unit: p.unit || 'Case',
           unitPrice: 0.0,
+          discount: 0.0,
           totalPrice: 0.0,
           isPromo: true,
         });
@@ -190,30 +196,6 @@ export function OrderInvoicePreview({
               <path d="M21 21v-5h-5" />
             </svg>
             <span className="rotate-btn-label">{isLandscape ? 'Portrait' : 'Rotate'}</span>
-          </button>
-
-          {/* Download PDF Button */}
-          <button
-            type="button"
-            className="invoice-action-icon-btn"
-            onClick={() => notify('Order Preview PDF downloaded')}
-            aria-label="Download PDF"
-            title="Download PDF"
-          >
-            <svg
-              width="18"
-              height="18"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="#b49a00"
-              strokeWidth="2.2"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-            >
-              <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
-              <polyline points="7 10 12 15 17 10" />
-              <line x1="12" y1="15" x2="12" y2="3" />
-            </svg>
           </button>
 
           {/* Share Button */}
@@ -317,6 +299,7 @@ export function OrderInvoicePreview({
                   <th className="so-th-tier">Type</th>
                   <th className="so-th-qty">Quantity</th>
                   <th className="so-th-price">Unit Price</th>
+                  <th className="so-th-discount">Discount</th>
                   <th className="so-th-total">Total</th>
                 </tr>
               </thead>
@@ -327,7 +310,6 @@ export function OrderInvoicePreview({
                     <td className="so-td-item">
                       <div className="so-item-name">
                         {row.name}
-                        {row.isPromo && <span className="so-promo-tag">Promotion</span>}
                       </div>
                       {!isLandscape && <div className="so-item-subcode">{row.code}</div>}
                     </td>
@@ -342,6 +324,13 @@ export function OrderInvoicePreview({
                       <span className="so-qty-unit">{row.unit}</span>
                     </td>
                     <td className="so-td-price">${row.unitPrice.toFixed(3)}</td>
+                    <td className="so-td-discount">
+                      {row.discount > 0 ? (
+                        <span className="so-disc-active">-${row.discount.toFixed(3)}</span>
+                      ) : (
+                        <span className="so-disc-zero">$0.000</span>
+                      )}
+                    </td>
                     <td className="so-td-total">${row.totalPrice.toFixed(3)}</td>
                   </tr>
                 ))}
