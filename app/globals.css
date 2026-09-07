@@ -3445,6 +3445,7 @@
 .customers-list-scroll-body {
   flex: 1;
   overflow-y: auto;
+  overflow-x: hidden;
   padding: 16px 16px 88px;
   display: flex;
   flex-direction: column;
@@ -3456,7 +3457,16 @@
   display: none;
 }
 
+.customer-swipe-row-container {
+  position: relative;
+  width: 100%;
+  overflow: hidden;
+  border-radius: 16px;
+  user-select: none;
+}
+
 .customer-card-item {
+  position: relative;
   background: #ffffff;
   border-radius: 16px;
   border: 1px solid #f0f0f2;
@@ -3466,7 +3476,9 @@
   align-items: flex-start;
   gap: 14px;
   cursor: pointer;
-  transition: transform 120ms ease, box-shadow 120ms ease;
+  transition: transform 220ms cubic-bezier(0.16, 1, 0.3, 1), box-shadow 140ms ease;
+  width: 100%;
+  z-index: 2;
 }
 
 .customer-card-item:hover {
@@ -3475,6 +3487,54 @@
 
 .customer-card-item:active {
   transform: scale(0.99);
+}
+
+.customer-card-item.is-swiped-left {
+  transform: translateX(-104px);
+}
+
+.customer-swipe-action-panel {
+  position: absolute;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  width: 96px;
+  display: flex;
+  align-items: stretch;
+  justify-content: flex-end;
+  z-index: 1;
+}
+
+.customer-visit-action-btn {
+  width: 96px;
+  height: 100%;
+  background: #b49a00;
+  border: none;
+  border-radius: 14px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+  color: #ffffff;
+  cursor: pointer;
+  box-shadow: 0 4px 14px rgba(180, 154, 0, 0.32);
+  transition: background 140ms ease, transform 100ms ease;
+}
+
+.customer-visit-action-btn:hover {
+  background: #9e8700;
+}
+
+.customer-visit-action-btn:active {
+  transform: scale(0.96);
+}
+
+.customer-visit-label {
+  font-size: 13.5px;
+  font-weight: 600;
+  color: #ffffff;
+  letter-spacing: 0.1px;
 }
 
 .customer-avatar-box {

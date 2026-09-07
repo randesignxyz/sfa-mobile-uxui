@@ -118,6 +118,187 @@ function ImagePlaceholderIcon() {
   );
 }
 
+interface SwipeableCustomerCardProps {
+  customer: Customer;
+  isSwiped: boolean;
+  onSwipeLeft: () => void;
+  onSwipeRight: () => void;
+  onSelect: () => void;
+  onVisit: () => void;
+}
+
+function SwipeableCustomerCard({
+  customer,
+  isSwiped,
+  onSwipeLeft,
+  onSwipeRight,
+  onSelect,
+  onVisit,
+}: SwipeableCustomerCardProps) {
+  const [touchStartX, setTouchStartX] = useState<number | null>(null);
+  const [touchStartY, setTouchStartY] = useState<number | null>(null);
+  const [mouseStartX, setMouseStartX] = useState<number | null>(null);
+
+  const handleTouchStart = (e: React.TouchEvent) => {
+    setTouchStartX(e.touches[0].clientX);
+    setTouchStartY(e.touches[0].clientY);
+  };
+
+  const handleTouchEnd = (e: React.TouchEvent) => {
+    if (touchStartX === null || touchStartY === null) return;
+    const deltaX = e.changedTouches[0].clientX - touchStartX;
+    const deltaY = e.changedTouches[0].clientY - touchStartY;
+
+    if (Math.abs(deltaX) > Math.abs(deltaY) && Math.abs(deltaX) > 30) {
+      if (deltaX < 0) {
+        onSwipeLeft();
+      } else {
+        onSwipeRight();
+      }
+    }
+    setTouchStartX(null);
+    setTouchStartY(null);
+  };
+
+  const handleMouseDown = (e: React.MouseEvent) => {
+    const target = e.target as HTMLElement;
+    if (target.closest('button')) return;
+    setMouseStartX(e.clientX);
+  };
+
+  const handleMouseUp = (e: React.MouseEvent) => {
+    if (mouseStartX === null) return;
+    const deltaX = e.clientX - mouseStartX;
+    if (Math.abs(deltaX) > 30) {
+      if (deltaX < 0) {
+        onSwipeLeft();
+      } else {
+        onSwipeRight();
+      }
+    }
+    setMouseStartX(null);
+  };
+
+  return (
+    <div
+      className={`customer-swipe-row-container ${isSwiped ? 'is-swiped' : ''}`}
+      onTouchStart={handleTouchStart}
+      onTouchEnd={handleTouchEnd}
+      onMouseDown={handleMouseDown}
+      onMouseUp={handleMouseUp}
+    >
+      <article
+        className={`customer-card-item ${isSwiped ? 'is-swiped-left' : ''}`}
+        onClick={() => {
+          if (isSwiped) {
+            onSwipeRight();
+          } else {
+            onSelect();
+          }
+        }}
+        role="button"
+        tabIndex={0}
+        onKeyDown={(e) => {
+          if (e.key === 'Enter' || e.key === ' ') {
+            if (isSwiped) onSwipeRight();
+            else onSelect();
+          }
+        }}
+        aria-label={`Customer ${customer.name}, code ${customer.code}`}
+      >
+        {/* Left Image Placeholder */}
+        <div className="customer-avatar-box">
+          {customer.image ? (
+            <img src={customer.image} alt={customer.name} className="customer-avatar-img" />
+          ) : (
+            <div className="customer-avatar-placeholder">
+              <ImagePlaceholderIcon />
+            </div>
+          )}
+        </div>
+
+        {/* Right Details */}
+        <div className="customer-card-details">
+          <div className="customer-names-block">
+            <div className="customer-khmer-name">{customer.khmerName}</div>
+            <h2 className="customer-latin-name">{customer.name}</h2>
+          </div>
+
+          <div className="customer-meta-row">
+            {/* Document / SKU Code */}
+            <div className="customer-code-meta">
+              <svg
+                width="14"
+                height="14"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="#6b7280"
+                strokeWidth="2"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                className="meta-svg-icon"
+              >
+                <path d="M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7Z" />
+                <path d="M14 2v4a2 2 0 0 0 2 2h4" />
+                <path d="M10 9H8" />
+                <path d="M16 13H8" />
+                <path d="M16 17H8" />
+              </svg>
+              <span>{customer.code}</span>
+            </div>
+
+            {/* Phone */}
+            <div className="customer-phone-meta">
+              <svg
+                width="14"
+                height="14"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="#6b7280"
+                strokeWidth="2"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                className="meta-svg-icon"
+              >
+                <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z" />
+              </svg>
+              <span>{customer.phone}</span>
+            </div>
+          </div>
+        </div>
+      </article>
+
+      {/* Swipe Action: Yellow Visit Button */}
+      <div className={`customer-swipe-action-panel ${isSwiped ? 'is-visible' : ''}`}>
+        <button
+          type="button"
+          className="customer-visit-action-btn"
+          onClick={(e) => {
+            e.stopPropagation();
+            onVisit();
+          }}
+          aria-label={`Visit ${customer.name}`}
+        >
+          <svg
+            width="22"
+            height="22"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="#ffffff"
+            strokeWidth="2.3"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+          >
+            <path d="M20 10c0 4.993-5.539 10.193-7.399 11.799a1 1 0 0 1-1.202 0C9.539 20.193 4 14.993 4 10a8 8 0 0 1 16 0" />
+            <circle cx="12" cy="10" r="3" />
+          </svg>
+          <span className="customer-visit-label">Visit</span>
+        </button>
+      </div>
+    </div>
+  );
+}
+
 export function CustomersScreen({
   onSelectCustomer,
   onNavigateTab,
@@ -127,6 +308,7 @@ export function CustomersScreen({
   const [subFilter, setSubFilter] = useState<SubFilterType>('All');
   const [searchQuery, setSearchQuery] = useState('');
   const [isSearchOpen, setIsSearchOpen] = useState(false);
+  const [swipedCustomerId, setSwipedCustomerId] = useState<string | null>('c-2'); // Ah Da swiped by default as in screenshot
   const [toast, setToast] = useState('');
 
   function notify(msg: string) {
@@ -142,7 +324,6 @@ export function CustomersScreen({
     return initialCustomers.filter((c) => {
       // Primary tab check
       if (primaryTab === 'Prospect' && !c.isProspect) {
-        // If prospect selected, filter prospect (for demonstration)
         return false;
       }
       // Sub filter
@@ -332,86 +513,21 @@ export function CustomersScreen({
           </div>
         ) : (
           filteredCustomers.map((cust) => (
-            <article
+            <SwipeableCustomerCard
               key={cust.id}
-              className="customer-card-item"
-              onClick={() => {
+              customer={cust}
+              isSwiped={swipedCustomerId === cust.id}
+              onSwipeLeft={() => setSwipedCustomerId(cust.id)}
+              onSwipeRight={() => setSwipedCustomerId(null)}
+              onSelect={() => {
                 if (onSelectCustomer) {
                   onSelectCustomer(cust);
                 } else {
                   notify(`Selected ${cust.name}`);
                 }
               }}
-              role="button"
-              tabIndex={0}
-              onKeyDown={(e) => {
-                if (e.key === 'Enter' || e.key === ' ') {
-                  if (onSelectCustomer) onSelectCustomer(cust);
-                }
-              }}
-              aria-label={`Customer ${cust.name}, code ${cust.code}`}
-            >
-              {/* Left Image Placeholder */}
-              <div className="customer-avatar-box">
-                {cust.image ? (
-                  <img src={cust.image} alt={cust.name} className="customer-avatar-img" />
-                ) : (
-                  <div className="customer-avatar-placeholder">
-                    <ImagePlaceholderIcon />
-                  </div>
-                )}
-              </div>
-
-              {/* Right Details */}
-              <div className="customer-card-details">
-                <div className="customer-names-block">
-                  <div className="customer-khmer-name">{cust.khmerName}</div>
-                  <h2 className="customer-latin-name">{cust.name}</h2>
-                </div>
-
-                <div className="customer-meta-row">
-                  {/* Document / SKU Code */}
-                  <div className="customer-code-meta">
-                    <svg
-                      width="14"
-                      height="14"
-                      viewBox="0 0 24 24"
-                      fill="none"
-                      stroke="#6b7280"
-                      strokeWidth="2"
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      className="meta-svg-icon"
-                    >
-                      <path d="M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7Z" />
-                      <path d="M14 2v4a2 2 0 0 0 2 2h4" />
-                      <path d="M10 9H8" />
-                      <path d="M16 13H8" />
-                      <path d="M16 17H8" />
-                    </svg>
-                    <span>{cust.code}</span>
-                  </div>
-
-                  {/* Phone */}
-                  <div className="customer-phone-meta">
-                    <svg
-                      width="14"
-                      height="14"
-                      viewBox="0 0 24 24"
-                      fill="none"
-                      stroke="#6b7280"
-                      strokeWidth="2"
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      className="meta-svg-icon"
-                    >
-                      <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z" />
-                    </svg>
-                    <span>{cust.phone}</span>
-                  </div>
-                </div>
-              </div>
-            </article>
+              onVisit={() => notify(`Starting visit for ${cust.name}`)}
+            />
           ))
         )}
       </div>
