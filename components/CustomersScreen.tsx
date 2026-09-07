@@ -305,7 +305,7 @@ export function CustomersScreen({
   activeNavTab = 'Customer',
 }: CustomersScreenProps) {
   const [primaryTab, setPrimaryTab] = useState<PrimaryFilterTab>('Customers');
-  const [subFilter, setSubFilter] = useState<SubFilterType>('All');
+  const [subFilter, setSubFilter] = useState<SubFilterType>('Indirect');
   const [searchQuery, setSearchQuery] = useState('');
   const [isSearchOpen, setIsSearchOpen] = useState(false);
   const [swipedCustomerId, setSwipedCustomerId] = useState<string | null>(null);
