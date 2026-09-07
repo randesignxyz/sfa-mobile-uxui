@@ -5,6 +5,7 @@ import { useMemo, useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { AddToCartScreen, ProductItem, PriceTier } from '@/components/AddToCartScreen';
 import { CartScreen, CartLineItem } from '@/components/CartScreen';
+import { CustomersScreen, Customer, initialCustomers } from '@/components/CustomersScreen';
 
 type Category = 'All' | 'Vital' | 'Mee Chiet' | 'OM';
 type PrimaryTab = 'Record Stock' | 'Sales' | 'Issue';
@@ -253,6 +254,8 @@ function ProductCard({
 }
 
 export default function Home() {
+  const [activeNavTab, setActiveNavTab] = useState<'Home' | 'Visit' | 'Order' | 'Customer'>('Customer');
+  const [selectedCustomer, setSelectedCustomer] = useState<Customer>(initialCustomers[4]); // Bun Sophear
   const [primaryTab, setPrimaryTab] = useState<PrimaryTab>('Sales');
   const [orderView, setOrderView] = useState<OrderView>('Sale Order');
   const [category, setCategory] = useState<Category>('All');
@@ -353,164 +356,180 @@ export default function Home() {
   return (
     <main className={`prototype-stage ${isLandscape ? 'is-landscape-stage' : ''}`}>
       <section className={`phone ${isLandscape ? 'is-landscape' : ''}`} aria-label="SFA sales order mobile prototype">
-        {/* Main List Screen Header */}
-        <header className="app-header-sales">
-          <DeviceStatusBar />
+        {/* If Customer Tab is active, render CustomersScreen */}
+        {activeNavTab === 'Customer' ? (
+          <CustomersScreen
+            onSelectCustomer={(cust) => {
+              setSelectedCustomer(cust);
+              setActiveNavTab('Order');
+              notify(`Viewing order for ${cust.name}`);
+            }}
+            onNavigateTab={setActiveNavTab}
+            activeNavTab={activeNavTab}
+          />
+        ) : (
+          <>
+            {/* Main List Screen Header */}
+            <header className="app-header-sales">
+              <DeviceStatusBar />
 
-          {/* Customer Title Row with STAGING badge */}
-          <div className="main-nav-bar">
-            <Button
-              variant="ghost"
-              size="icon-sm"
-              className="icon-button back-button"
-              aria-label="Back"
-            >
-              <img src="/assets/arrow-left.svg" alt="Back" />
-            </Button>
-
-            <div className="title-center-group">
-              <h1 className="outlet-name-title">Bun Sophear</h1>
-            </div>
-
-            <button
-              type="button"
-              className="search-button"
-              aria-label="Search"
-              onClick={() => notify('Search catalog opened')}
-            >
-              <svg
-                width="20"
-                height="20"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="#B49A00"
-                strokeWidth="2.5"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-              >
-                <circle cx="11" cy="11" r="8" />
-                <line x1="21" y1="21" x2="16.65" y2="16.65" />
-              </svg>
-            </button>
-          </div>
-
-          {/* Primary Top Level Navigation Tabs */}
-          <nav className="primary-sales-tabs" aria-label="Section navigation">
-            {(['Record Stock', 'Sales', 'Issue'] as PrimaryTab[]).map((tab) => (
-              <button
-                key={tab}
-                type="button"
-                className={primaryTab === tab ? 'is-active' : ''}
-                onClick={() => setPrimaryTab(tab)}
-              >
-                {tab}
-              </button>
-            ))}
-          </nav>
-
-          {/* Sub Navigation Tabs */}
-          <nav className="order-sub-tabs" aria-label="Order view options">
-            {(['History', 'Sale Order'] as OrderView[]).map((tab) => (
-              <button
-                key={tab}
-                type="button"
-                className={orderView === tab ? 'is-active' : ''}
-                onClick={() => setOrderView(tab)}
-              >
-                {tab}
-              </button>
-            ))}
-          </nav>
-
-          {/* Brand Filter Categories & Grid toggle */}
-          <div className="category-filter-row">
-            <div className="category-chips-list">
-              {(['All', 'Vital', 'Mee Chiet', 'OM'] as Category[]).map((cat) => (
-                <button
-                  key={cat}
-                  type="button"
-                  className={`cat-chip-btn ${category === cat ? 'is-active' : ''}`}
-                  onClick={() => setCategory(cat)}
+              {/* Customer Title Row with STAGING badge */}
+              <div className="main-nav-bar">
+                <Button
+                  variant="ghost"
+                  size="icon-sm"
+                  className="icon-button back-button"
+                  aria-label="Back to customers"
+                  onClick={() => setActiveNavTab('Customer')}
                 >
-                  {cat}
+                  <img src="/assets/arrow-left.svg" alt="Back" />
+                </Button>
+
+                <div className="title-center-group">
+                  <h1 className="outlet-name-title">{selectedCustomer?.name || 'Bun Sophear'}</h1>
+                </div>
+
+                <button
+                  type="button"
+                  className="search-button"
+                  aria-label="Search"
+                  onClick={() => notify('Search catalog opened')}
+                >
+                  <svg
+                    width="20"
+                    height="20"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="#B49A00"
+                    strokeWidth="2.5"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                  >
+                    <circle cx="11" cy="11" r="8" />
+                    <line x1="21" y1="21" x2="16.65" y2="16.65" />
+                  </svg>
                 </button>
+              </div>
+
+              {/* Primary Top Level Navigation Tabs */}
+              <nav className="primary-sales-tabs" aria-label="Section navigation">
+                {(['Record Stock', 'Sales', 'Issue'] as PrimaryTab[]).map((tab) => (
+                  <button
+                    key={tab}
+                    type="button"
+                    className={primaryTab === tab ? 'is-active' : ''}
+                    onClick={() => setPrimaryTab(tab)}
+                  >
+                    {tab}
+                  </button>
+                ))}
+              </nav>
+
+              {/* Sub Navigation Tabs */}
+              <nav className="order-sub-tabs" aria-label="Order view options">
+                {(['History', 'Sale Order'] as OrderView[]).map((tab) => (
+                  <button
+                    key={tab}
+                    type="button"
+                    className={orderView === tab ? 'is-active' : ''}
+                    onClick={() => setOrderView(tab)}
+                  >
+                    {tab}
+                  </button>
+                ))}
+              </nav>
+
+              {/* Brand Filter Categories & Grid toggle */}
+              <div className="category-filter-row">
+                <div className="category-chips-list">
+                  {(['All', 'Vital', 'Mee Chiet', 'OM'] as Category[]).map((cat) => (
+                    <button
+                      key={cat}
+                      type="button"
+                      className={`cat-chip-btn ${category === cat ? 'is-active' : ''}`}
+                      onClick={() => setCategory(cat)}
+                    >
+                      {cat}
+                    </button>
+                  ))}
+                </div>
+
+                <button
+                  type="button"
+                  className="grid-view-btn"
+                  aria-label="Toggle grid layout"
+                  onClick={() => notify('Layout toggled')}
+                >
+                  <svg
+                    width="18"
+                    height="18"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="#B49A00"
+                    strokeWidth="2.5"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                  >
+                    <rect x="3" y="3" width="7" height="7" rx="1.5" />
+                    <rect x="14" y="3" width="7" height="7" rx="1.5" />
+                    <rect x="3" y="14" width="7" height="7" rx="1.5" />
+                    <rect x="14" y="14" width="7" height="7" rx="1.5" />
+                  </svg>
+                </button>
+              </div>
+            </header>
+
+            {/* Product Cards List */}
+            <div className="product-cards-container" aria-live="polite">
+              {visibleProducts.map((product) => (
+                <ProductCard
+                  key={product.id}
+                  product={product}
+                  count={counts[product.id] ?? 0}
+                  onClick={() => handleOpenAddToCart(product)}
+                />
               ))}
             </div>
 
-            <button
-              type="button"
-              className="grid-view-btn"
-              aria-label="Toggle grid layout"
-              onClick={() => notify('Layout toggled')}
-            >
-              <svg
-                width="18"
-                height="18"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="#B49A00"
-                strokeWidth="2.5"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-              >
-                <rect x="3" y="3" width="7" height="7" rx="1.5" />
-                <rect x="14" y="3" width="7" height="7" rx="1.5" />
-                <rect x="3" y="14" width="7" height="7" rx="1.5" />
-                <rect x="14" y="14" width="7" height="7" rx="1.5" />
-              </svg>
-            </button>
-          </div>
-        </header>
+            {/* Floating View Your Cart Banner */}
+            {totalCartItems > 0 && !selectedProductForCart && !isCartOpen && (
+              <div className="floating-cart-banner-wrap">
+                <button
+                  type="button"
+                  className="floating-cart-banner"
+                  onClick={() => setIsCartOpen(true)}
+                >
+                  <span className="cart-banner-text">View your cart</span>
+                  <div className="cart-banner-count">{totalCartItems}</div>
+                </button>
+              </div>
+            )}
 
-        {/* Product Cards List */}
-        <div className="product-cards-container" aria-live="polite">
-          {visibleProducts.map((product) => (
-            <ProductCard
-              key={product.id}
-              product={product}
-              count={counts[product.id] ?? 0}
-              onClick={() => handleOpenAddToCart(product)}
-            />
-          ))}
-        </div>
+            {/* Enter Quantity / Add To Cart Screen */}
+            {selectedProductForCart && (
+              <AddToCartScreen
+                product={selectedProductForCart}
+                initialTiers={productTiers[selectedProductForCart.id]}
+                onBack={() => setSelectedProductForCart(null)}
+                onAddToCart={handleConfirmAddToCart}
+              />
+            )}
 
-        {/* Floating View Your Cart Banner */}
-        {totalCartItems > 0 && !selectedProductForCart && !isCartOpen && (
-          <div className="floating-cart-banner-wrap">
-            <button
-              type="button"
-              className="floating-cart-banner"
-              onClick={() => setIsCartOpen(true)}
-            >
-              <span className="cart-banner-text">View your cart</span>
-              <div className="cart-banner-count">{totalCartItems}</div>
-            </button>
-          </div>
-        )}
-
-        {/* Enter Quantity / Add To Cart Screen */}
-        {selectedProductForCart && (
-          <AddToCartScreen
-            product={selectedProductForCart}
-            initialTiers={productTiers[selectedProductForCart.id]}
-            onBack={() => setSelectedProductForCart(null)}
-            onAddToCart={handleConfirmAddToCart}
-          />
-        )}
-
-        {/* View Cart Screen Modal */}
-        {isCartOpen && (
-          <CartScreen
-            cartLines={cartLines}
-            onBack={() => {
-              setIsLandscape(false);
-              setIsCartOpen(false);
-            }}
-            onReviewOrder={() => notify('Proceeding to Review Order')}
-            onSelectPromotion={() => notify('1 active promotion selected')}
-            onManualPromotion={() => notify('Manual Promotion opened')}
-            onOrientationChange={setIsLandscape}
-          />
+            {/* View Cart Screen Modal */}
+            {isCartOpen && (
+              <CartScreen
+                cartLines={cartLines}
+                onBack={() => {
+                  setIsLandscape(false);
+                  setIsCartOpen(false);
+                }}
+                onReviewOrder={() => notify('Proceeding to Review Order')}
+                onSelectPromotion={() => notify('1 active promotion selected')}
+                onManualPromotion={() => notify('Manual Promotion opened')}
+                onOrientationChange={setIsLandscape}
+              />
+            )}
+          </>
         )}
 
         {toast && (
