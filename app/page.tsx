@@ -422,6 +422,16 @@ export default function Home() {
               setActiveNavTab('Order');
               notify(`Viewing order for ${cust.name}`);
             }}
+            onCustomerCall={(cust) => {
+              setSelectedCustomer(cust);
+              setActiveNavTab('Order');
+              notify(`Customer Call: Direct order for ${cust.name}`);
+            }}
+            onSalesCall={(cust) => {
+              setSelectedCustomer(cust);
+              setActiveNavTab('Order');
+              notify(`Sales Call: Direct order for ${cust.name}`);
+            }}
             onNavigateTab={setActiveNavTab}
             activeNavTab={activeNavTab}
           />

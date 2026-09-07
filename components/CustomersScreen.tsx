@@ -96,6 +96,8 @@ interface CustomersScreenProps {
   onSelectCustomer?: (customer: Customer) => void;
   onNavigateTab?: (tab: 'Home' | 'Visit' | 'Order' | 'Customer') => void;
   activeNavTab?: 'Home' | 'Visit' | 'Order' | 'Customer';
+  onCustomerCall?: (customer: Customer) => void;
+  onSalesCall?: (customer: Customer) => void;
 }
 
 /** Placeholder image icon matching design */
@@ -360,6 +362,8 @@ export function CustomersScreen({
   onSelectCustomer,
   onNavigateTab,
   activeNavTab = 'Customer',
+  onCustomerCall,
+  onSalesCall,
 }: CustomersScreenProps) {
   const [primaryTab, setPrimaryTab] = useState<PrimaryFilterTab>('Customers');
   const [subFilter, setSubFilter] = useState<SubFilterType>('All');
@@ -584,8 +588,24 @@ export function CustomersScreen({
                 }
               }}
               onVisit={() => notify(`Starting visit for ${cust.name}`)}
-              onCustomerCall={() => notify(`Calling customer ${cust.name} (${cust.phone})`)}
-              onSalesCall={() => notify(`Starting sales call for ${cust.name}`)}
+              onCustomerCall={() => {
+                if (onCustomerCall) {
+                  onCustomerCall(cust);
+                } else if (onSelectCustomer) {
+                  onSelectCustomer(cust);
+                } else {
+                  notify(`Customer Call: ${cust.name}`);
+                }
+              }}
+              onSalesCall={() => {
+                if (onSalesCall) {
+                  onSalesCall(cust);
+                } else if (onSelectCustomer) {
+                  onSelectCustomer(cust);
+                } else {
+                  notify(`Sales Call: ${cust.name}`);
+                }
+              }}
             />
           ))
         )}
