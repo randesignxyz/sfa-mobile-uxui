@@ -287,16 +287,10 @@ export default function Home() {
 
     if (Math.abs(deltaX) > Math.abs(deltaY) && Math.abs(deltaX) > 45) {
       if (deltaX < 0) {
-        // Swipe Left: switch to Customer screen
-        if (activeNavTab !== 'Customer') {
+        // Swipe Left: switch to Customer screen when on Order catalog
+        if (activeNavTab === 'Order') {
           setActiveNavTab('Customer');
           notify('Swiped to Customers');
-        }
-      } else {
-        // Swipe Right: switch to Order catalog
-        if (activeNavTab === 'Customer') {
-          setActiveNavTab('Order');
-          notify('Swiped to Sales Catalog');
         }
       }
     }
@@ -305,7 +299,7 @@ export default function Home() {
 
   const handleMouseDown = (e: React.MouseEvent) => {
     const target = e.target as HTMLElement;
-    if (target.closest('button, input, textarea, a, select')) return;
+    if (target.closest('button, input, textarea, a, select, article')) return;
     setMouseStartPos({ x: e.clientX, y: e.clientY });
   };
 
@@ -316,16 +310,10 @@ export default function Home() {
 
     if (Math.abs(deltaX) > Math.abs(deltaY) && Math.abs(deltaX) > 45) {
       if (deltaX < 0) {
-        // Drag Left: switch to Customer screen
-        if (activeNavTab !== 'Customer') {
+        // Drag Left: switch to Customer screen when on Order catalog
+        if (activeNavTab === 'Order') {
           setActiveNavTab('Customer');
           notify('Swiped to Customers');
-        }
-      } else {
-        // Drag Right: switch to Order catalog
-        if (activeNavTab === 'Customer') {
-          setActiveNavTab('Order');
-          notify('Swiped to Sales Catalog');
         }
       }
     }
