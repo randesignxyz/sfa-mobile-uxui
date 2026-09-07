@@ -308,7 +308,7 @@ export function CustomersScreen({
   const [subFilter, setSubFilter] = useState<SubFilterType>('All');
   const [searchQuery, setSearchQuery] = useState('');
   const [isSearchOpen, setIsSearchOpen] = useState(false);
-  const [swipedCustomerId, setSwipedCustomerId] = useState<string | null>('c-2'); // Ah Da swiped by default as in screenshot
+  const [swipedCustomerId, setSwipedCustomerId] = useState<string | null>(null);
   const [toast, setToast] = useState('');
 
   function notify(msg: string) {
