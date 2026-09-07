@@ -102,18 +102,18 @@ interface CustomersScreenProps {
 function ImagePlaceholderIcon() {
   return (
     <svg
-      width="28"
-      height="28"
+      width="30"
+      height="30"
       viewBox="0 0 24 24"
       fill="none"
-      stroke="#b0b5bd"
+      stroke="#9ca3af"
       strokeWidth="1.8"
       strokeLinecap="round"
       strokeLinejoin="round"
     >
-      <rect width="18" height="18" x="3" y="3" rx="3" ry="3" />
-      <circle cx="9" cy="9" r="2" />
-      <path d="m21 15-3.086-3.086a2 2 0 0 0-2.828 0L6 21" />
+      <rect width="18" height="18" x="3" y="3" rx="4" />
+      <circle cx="8.5" cy="8.5" r="1.5" />
+      <path d="m21 15-5-5L5 21" />
     </svg>
   );
 }
