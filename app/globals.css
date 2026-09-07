@@ -3108,15 +3108,11 @@
   line-height: 1;
 }
 
-.is-sub-product-name {
-  color: #4b5563;
+.is-sub-product-name,
+.sub-product-row .so-item-name {
+  color: #6b7280 !important;
   font-size: 11px;
-}
-
-.sub-product-bullet {
-  color: #b49a00;
-  font-weight: 700;
-  margin-right: 4px;
+  font-weight: 500;
 }
 
 .so-td-num, .so-td-item, .so-td-qty, .so-td-price, .so-td-discount, .so-td-total {

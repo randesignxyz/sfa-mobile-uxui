@@ -314,7 +314,6 @@ export function OrderInvoicePreview({
                     </td>
                     <td className="so-td-item">
                       <div className={`so-item-name ${row.isPromo ? 'is-sub-product-name' : ''}`}>
-                        {row.isPromo && <span className="sub-product-bullet">↳</span>}
                         <span>{row.name}</span>
                       </div>
                     </td>
