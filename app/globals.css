@@ -3046,22 +3046,17 @@
   background: #dedede;
 }
 
-.so-th-num, .so-th-item, .so-th-qty, .so-th-price, .so-th-discount, .so-th-total {
+.so-th-item, .so-th-qty, .so-th-price, .so-th-discount, .so-th-total {
   padding: 7px 8px;
   font-weight: 700;
   color: #000000;
   font-size: 11.5px;
 }
 
-.so-th-num {
-  width: 28px;
-  text-align: center;
-  border-top-left-radius: 4px;
-  border-bottom-left-radius: 4px;
-}
-
 .so-th-item {
   text-align: left;
+  border-top-left-radius: 4px;
+  border-bottom-left-radius: 4px;
 }
 
 .so-th-qty {
@@ -3100,11 +3095,12 @@
   border-bottom: 1px dashed #e5e7eb;
 }
 
-.sub-item-tree-icon {
+.sub-product-bullet {
   display: inline-block;
   color: #9ca3af;
   font-size: 13px;
   font-weight: 600;
+  margin-right: 5px;
   line-height: 1;
 }
 
@@ -3113,20 +3109,14 @@
   color: #6b7280 !important;
   font-size: 11px;
   font-weight: 500;
+  padding-left: 6px;
 }
 
-.so-td-num, .so-td-item, .so-td-qty, .so-td-price, .so-td-discount, .so-td-total {
+.so-td-item, .so-td-qty, .so-td-price, .so-td-discount, .so-td-total {
   padding: 8px 8px;
   color: #000000;
   font-size: 11.5px;
   vertical-align: middle;
-}
-
-.so-td-num {
-  text-align: center;
-  color: #000000;
-  font-size: 11.5px;
-  font-weight: 600;
 }
 
 .so-td-item {

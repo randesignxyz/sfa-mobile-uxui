@@ -291,7 +291,6 @@ export function OrderInvoicePreview({
             <table className={`sale-order-table ${isLandscape ? 'is-landscape-table' : ''}`}>
               <thead>
                 <tr>
-                  <th className="so-th-num">#</th>
                   <th className="so-th-item">Item Name</th>
                   <th className="so-th-qty">Quantity</th>
                   <th className="so-th-price">Unit Price</th>
@@ -305,15 +304,9 @@ export function OrderInvoicePreview({
                     key={row.id}
                     className={`table-row-item ${row.isPromo ? 'sub-product-row' : 'main-product-row'}`}
                   >
-                    <td className="so-td-num">
-                      {row.isPromo ? (
-                        <span className="sub-item-tree-icon" title="Promotional item">↳</span>
-                      ) : (
-                        row.index
-                      )}
-                    </td>
                     <td className="so-td-item">
                       <div className={`so-item-name ${row.isPromo ? 'is-sub-product-name' : ''}`}>
+                        {row.isPromo && <span className="sub-product-bullet">↳</span>}
                         <span>{row.name}</span>
                       </div>
                     </td>
