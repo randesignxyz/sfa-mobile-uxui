@@ -3593,14 +3593,14 @@
 .customer-khmer-name {
   font-family: var(--font-khmer);
   font-size: 14px;
-  font-weight: 700;
+  font-weight: 600;
   color: #18181b;
   line-height: 1.35;
 }
 
 .customer-latin-name {
   font-size: 15px;
-  font-weight: 800;
+  font-weight: 600;
   color: #18181b;
   margin: 0 0 3px 0;
   line-height: 1.25;
