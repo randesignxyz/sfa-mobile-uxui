@@ -2842,12 +2842,13 @@
 .invoice-header-actions {
   display: flex;
   align-items: center;
-  gap: 6px;
+  gap: 8px;
 }
 
 .invoice-action-icon-btn {
+  width: 34px;
   height: 34px;
-  padding: 0 8px;
+  padding: 0;
   border-radius: 8px;
   border: 1px solid #e5e7eb;
   background: #ffffff;
@@ -2855,11 +2856,9 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 5px;
   cursor: pointer;
   transition: all 140ms ease;
-  font-size: 11px;
-  font-weight: 600;
+  flex-shrink: 0;
 }
 
 .invoice-action-icon-btn:hover {
@@ -2868,27 +2867,27 @@
   color: #b49a00;
 }
 
-/* Rotate Screen button */
-.rotate-screen-btn {
-  background: #fdfbf2;
-  border-color: #e5d888;
-  color: #8c7800;
+/* Rotate Screen Icon Button */
+.rotate-screen-icon-btn {
+  background: #ffffff;
+  border-color: #e5e7eb;
+  color: #71717a;
 }
 
-.rotate-screen-btn:hover {
-  background: #fff6cc;
+.rotate-screen-icon-btn:hover {
+  background: #fffdf0;
   border-color: #b49a00;
-  color: #736200;
+  color: #b49a00;
 }
 
-.rotate-screen-btn.is-active-landscape {
+.rotate-screen-icon-btn.is-active-landscape {
   background: #b49a00;
   border-color: #968000;
   color: #ffffff;
-  box-shadow: 0 2px 8px rgba(180, 154, 0, 0.35);
+  box-shadow: 0 2px 8px rgba(180, 154, 0, 0.25);
 }
 
-.rotate-screen-btn.is-active-landscape:hover {
+.rotate-screen-icon-btn.is-active-landscape:hover {
   background: #968000;
   color: #ffffff;
 }
@@ -2899,12 +2898,6 @@
 
 .rotate-icon-svg.rotated {
   transform: rotate(90deg);
-}
-
-.rotate-btn-label {
-  font-size: 11px;
-  font-weight: 600;
-  letter-spacing: -0.01em;
 }
 
 .invoice-scroll-body {
@@ -2963,28 +2956,6 @@
   font-weight: 500;
 }
 
-.quick-orientation-chip {
-  display: inline-flex;
-  align-items: center;
-  gap: 5px;
-  padding: 4px 10px;
-  border-radius: 9999px;
-  font-size: 11px;
-  font-weight: 600;
-  background: #f4f4f5;
-  color: #3f3f46;
-  border: 1px solid #e4e4e7;
-  cursor: pointer;
-  transition: all 120ms ease;
-  white-space: nowrap;
-}
-
-.quick-orientation-chip:hover {
-  background: #fff9db;
-  border-color: #b49a00;
-  color: #8c7800;
-}
-
 .sale-order-meta-block {
   display: flex;
   flex-direction: column;
@@ -3031,14 +3002,13 @@
 
 .sale-order-table-container {
   width: 100%;
-  margin-top: 2px;
-  overflow-x: auto;
+  margin-top: 4px;
 }
 
 .sale-order-table {
   width: 100%;
   border-collapse: collapse;
-  font-size: 11.5px;
+  font-size: 11px;
   border-bottom: 1.5px solid #000000;
 }
 
@@ -3047,10 +3017,10 @@
 }
 
 .so-th-item, .so-th-qty, .so-th-price, .so-th-discount, .so-th-total {
-  padding: 7px 8px;
+  padding: 6px 4px;
   font-weight: 700;
   color: #000000;
-  font-size: 11.5px;
+  font-size: 11px;
 }
 
 .so-th-item {
@@ -3063,16 +3033,13 @@
   text-align: center;
 }
 
-.so-th-price {
-  text-align: right;
-}
-
-.so-th-discount {
+.so-th-price,
+.so-th-discount,
+.so-th-total {
   text-align: right;
 }
 
 .so-th-total {
-  text-align: right;
   border-top-right-radius: 4px;
   border-bottom-right-radius: 4px;
 }
@@ -3098,30 +3065,31 @@
 .sub-product-bullet {
   display: inline-block;
   color: #9ca3af;
-  font-size: 13px;
+  font-size: 12px;
   font-weight: 600;
-  margin-right: 5px;
+  margin-right: 4px;
   line-height: 1;
 }
 
 .is-sub-product-name,
 .sub-product-row .so-item-name {
   color: #6b7280 !important;
-  font-size: 11px;
+  font-size: 10.5px;
   font-weight: 500;
-  padding-left: 6px;
+  padding-left: 2px;
 }
 
 .so-td-item, .so-td-qty, .so-td-price, .so-td-discount, .so-td-total {
-  padding: 8px 8px;
+  padding: 6px 4px;
   color: #000000;
-  font-size: 11.5px;
+  font-size: 11px;
   vertical-align: middle;
 }
 
 .so-td-item {
   text-align: left;
   font-weight: 500;
+  line-height: 1.25;
 }
 
 .so-item-name {
@@ -3129,7 +3097,7 @@
   color: #000000;
   display: flex;
   align-items: center;
-  gap: 4px;
+  gap: 2px;
   flex-wrap: wrap;
 }
 
@@ -3139,15 +3107,15 @@
 }
 
 .so-qty-num {
-  font-size: 11.5px;
+  font-size: 11px;
   font-weight: 600;
   color: #000000;
 }
 
 .so-qty-unit {
-  font-size: 9.5px;
+  font-size: 9px;
   font-weight: 500;
-  color: #52525b;
+  color: #6b7280;
   margin-left: 1px;
 }
 
@@ -3158,7 +3126,7 @@
 
 .so-price-free, .so-total-free {
   color: #71717a;
-  font-size: 11px;
+  font-size: 10.5px;
 }
 
 .so-td-discount {
@@ -3168,13 +3136,13 @@
 
 .so-disc-zero {
   color: #71717a;
-  font-size: 11px;
+  font-size: 10.5px;
 }
 
 .so-disc-active {
   color: #059669;
   font-weight: 600;
-  font-size: 11.5px;
+  font-size: 11px;
 }
 
 .so-td-total {

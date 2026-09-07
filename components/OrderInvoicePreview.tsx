@@ -164,21 +164,20 @@ export function OrderInvoicePreview({
 
         <div className="invoice-header-title-wrap">
           <h1 className="invoice-nav-title">Order Preview</h1>
-          {isLandscape && <span className="invoice-nav-subtitle">Landscape View (Full Width)</span>}
         </div>
 
         <div className="invoice-header-actions">
-          {/* Rotate Screen Button */}
+          {/* Rotate Screen Icon Button (Compact 34x34) */}
           <button
             type="button"
-            className={`invoice-action-icon-btn rotate-screen-btn ${isLandscape ? 'is-active-landscape' : ''}`}
+            className={`invoice-action-icon-btn rotate-screen-icon-btn ${isLandscape ? 'is-active-landscape' : ''}`}
             onClick={handleToggleOrientation}
             aria-label={isLandscape ? 'Rotate to Portrait' : 'Rotate to Landscape'}
             title={isLandscape ? 'Switch to Portrait' : 'Rotate Screen to Landscape'}
           >
             <svg
-              width="19"
-              height="19"
+              width="18"
+              height="18"
               viewBox="0 0 24 24"
               fill="none"
               stroke="currentColor"
@@ -193,7 +192,6 @@ export function OrderInvoicePreview({
               <path d="M3 12a9 9 0 0 0 9 9 9.75 9.75 0 0 0 6.74-2.74L21 16" />
               <path d="M21 21v-5h-5" />
             </svg>
-            <span className="rotate-btn-label">{isLandscape ? 'Portrait' : 'Rotate'}</span>
           </button>
 
           {/* Share Button */}
@@ -227,7 +225,7 @@ export function OrderInvoicePreview({
       {/* Printable PDF Sheet Container (Scrollable) */}
       <div className={`invoice-scroll-body ${isLandscape ? 'is-landscape-body' : ''}`}>
         <div className={`invoice-paper-sheet ${isLandscape ? 'is-landscape-sheet' : ''}`}>
-          {/* Header Row on Paper */}
+          {/* Clean Header on Paper */}
           <div className="sale-order-paper-header">
             <div>
               <h1 className="sale-order-main-title">Order Preview</h1>
@@ -235,31 +233,6 @@ export function OrderInvoicePreview({
                 <span>Invoice #{invoiceNumber}</span> • <span>{orderDate}</span>
               </div>
             </div>
-
-            {/* Quick Landscape Badge/Toggle */}
-            <button
-              type="button"
-              className="quick-orientation-chip"
-              onClick={handleToggleOrientation}
-              title="Click to toggle orientation"
-            >
-              <svg
-                width="14"
-                height="14"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="2"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-              >
-                <path d="M21 12a9 9 0 0 0-9-9 9.75 9.75 0 0 0-6.74 2.74L3 8" />
-                <path d="M3 3v5h5" />
-                <path d="M3 12a9 9 0 0 0 9 9 9.75 9.75 0 0 0 6.74-2.74L21 16" />
-                <path d="M21 21v-5h-5" />
-              </svg>
-              <span>{isLandscape ? 'Portrait Mode' : 'Rotate to Landscape'}</span>
-            </button>
           </div>
 
           {/* Customer & Order Metadata Block */}
