@@ -1,3 +1,4 @@
+@import url('https://fonts.googleapis.com/css2?family=Kantumruy+Pro:ital,wght@0,100..700;1,100..700&display=swap');
 @import 'tailwindcss';
 @import 'tw-animate-css';
 @import 'shadcn/tailwind.css';
@@ -64,7 +65,8 @@
   --border: #e7e7e7;
   --input: #d1d1d1;
   --ring: #b49a00;
-  --font-interface: Inter, Roboto, -apple-system, BlinkMacSystemFont, 'Segoe UI',
+  --font-khmer: var(--font-kantumruy), 'Kantumruy Pro', -apple-system, sans-serif;
+  --font-interface: var(--font-kantumruy), 'Kantumruy Pro', Inter, Roboto, -apple-system, BlinkMacSystemFont, 'Segoe UI',
     Arial, sans-serif;
 }
 
@@ -3589,10 +3591,11 @@
 }
 
 .customer-khmer-name {
+  font-family: var(--font-khmer);
   font-size: 14px;
   font-weight: 700;
   color: #18181b;
-  line-height: 1.3;
+  line-height: 1.35;
 }
 
 .customer-latin-name {
