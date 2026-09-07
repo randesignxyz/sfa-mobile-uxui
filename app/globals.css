@@ -3505,7 +3505,7 @@
 }
 
 .customer-card-item.is-swiped-left {
-  transform: translateX(-220px);
+  transform: translateX(-228px);
 }
 
 .customer-swipe-action-panel {
@@ -3513,66 +3513,75 @@
   top: 0;
   right: 0;
   bottom: 0;
-  width: 216px;
+  width: 222px;
   display: flex;
   align-items: stretch;
   justify-content: flex-end;
-  gap: 4px;
+  gap: 6px;
   z-index: 1;
 }
 
 .customer-swipe-btn {
-  width: 68px;
+  width: 70px;
   height: 100%;
   border: none;
-  border-radius: 12px;
+  border-radius: 14px;
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  gap: 4px;
-  color: #ffffff;
+  gap: 5px;
+  color: #ffffff !important;
   cursor: pointer;
   text-align: center;
-  padding: 6px 2px;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
-  transition: background 140ms ease, transform 100ms ease;
+  padding: 8px 2px;
+  box-shadow: 0 3px 10px rgba(0, 0, 0, 0.12);
+  transition: transform 120ms ease, opacity 120ms ease;
+  flex-shrink: 0;
+}
+
+.customer-swipe-btn svg {
+  stroke: #ffffff !important;
+  fill: none;
+  flex-shrink: 0;
 }
 
 .customer-swipe-btn:active {
-  transform: scale(0.96);
+  transform: scale(0.95);
 }
 
 .customer-swipe-btn.is-visit {
-  background: #b49a00;
+  background-color: #b49a00 !important;
 }
 
 .customer-swipe-btn.is-visit:hover {
-  background: #9e8700;
+  background-color: #9e8700 !important;
 }
 
 .customer-swipe-btn.is-customer-call {
-  background: #0284c7;
+  background-color: #0284c7 !important;
 }
 
 .customer-swipe-btn.is-customer-call:hover {
-  background: #0369a1;
+  background-color: #0369a1 !important;
 }
 
 .customer-swipe-btn.is-sales-call {
-  background: #059669;
+  background-color: #059669 !important;
 }
 
 .customer-swipe-btn.is-sales-call:hover {
-  background: #047857;
+  background-color: #047857 !important;
 }
 
 .customer-swipe-btn-label {
-  font-size: 10.5px;
+  font-size: 11px;
   font-weight: 600;
-  color: #ffffff;
-  line-height: 1.15;
+  color: #ffffff !important;
+  line-height: 1.2;
   letter-spacing: 0.1px;
+  text-align: center;
+  white-space: normal;
 }
 
 .customer-avatar-box {
