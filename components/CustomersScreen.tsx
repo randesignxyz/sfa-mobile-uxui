@@ -125,6 +125,8 @@ interface SwipeableCustomerCardProps {
   onSwipeRight: () => void;
   onSelect: () => void;
   onVisit: () => void;
+  onCustomerCall?: () => void;
+  onSalesCall?: () => void;
 }
 
 function SwipeableCustomerCard({
@@ -134,6 +136,8 @@ function SwipeableCustomerCard({
   onSwipeRight,
   onSelect,
   onVisit,
+  onCustomerCall,
+  onSalesCall,
 }: SwipeableCustomerCardProps) {
   const [touchStartX, setTouchStartX] = useState<number | null>(null);
   const [touchStartY, setTouchStartY] = useState<number | null>(null);
@@ -268,11 +272,12 @@ function SwipeableCustomerCard({
         </div>
       </article>
 
-      {/* Swipe Action: Yellow Visit Button */}
+      {/* Swipe Actions Panel: Visit, Customer Call, Sales Call */}
       <div className={`customer-swipe-action-panel ${isSwiped ? 'is-visible' : ''}`}>
+        {/* Visit Button */}
         <button
           type="button"
-          className="customer-visit-action-btn"
+          className="customer-swipe-btn is-visit"
           onClick={(e) => {
             e.stopPropagation();
             onVisit();
@@ -280,19 +285,71 @@ function SwipeableCustomerCard({
           aria-label={`Visit ${customer.name}`}
         >
           <svg
-            width="22"
-            height="22"
+            width="20"
+            height="20"
             viewBox="0 0 24 24"
             fill="none"
             stroke="#ffffff"
-            strokeWidth="2.3"
+            strokeWidth="2.2"
             strokeLinecap="round"
             strokeLinejoin="round"
           >
             <path d="M20 10c0 4.993-5.539 10.193-7.399 11.799a1 1 0 0 1-1.202 0C9.539 20.193 4 14.993 4 10a8 8 0 0 1 16 0" />
             <circle cx="12" cy="10" r="3" />
           </svg>
-          <span className="customer-visit-label">Visit</span>
+          <span className="customer-swipe-btn-label">Visit</span>
+        </button>
+
+        {/* Customer Call Button */}
+        <button
+          type="button"
+          className="customer-swipe-btn is-customer-call"
+          onClick={(e) => {
+            e.stopPropagation();
+            if (onCustomerCall) onCustomerCall();
+          }}
+          aria-label={`Customer Call ${customer.name}`}
+        >
+          <svg
+            width="20"
+            height="20"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="#ffffff"
+            strokeWidth="2.2"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+          >
+            <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z" />
+          </svg>
+          <span className="customer-swipe-btn-label">Customer<br />Call</span>
+        </button>
+
+        {/* Sales Call Button */}
+        <button
+          type="button"
+          className="customer-swipe-btn is-sales-call"
+          onClick={(e) => {
+            e.stopPropagation();
+            if (onSalesCall) onSalesCall();
+          }}
+          aria-label={`Sales Call ${customer.name}`}
+        >
+          <svg
+            width="20"
+            height="20"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="#ffffff"
+            strokeWidth="2.2"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+          >
+            <path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2" />
+            <rect width="8" height="4" x="8" y="2" rx="1" ry="1" />
+            <path d="m9 14 2 2 4-4" />
+          </svg>
+          <span className="customer-swipe-btn-label">Sales<br />Call</span>
         </button>
       </div>
     </div>
@@ -527,6 +584,8 @@ export function CustomersScreen({
                 }
               }}
               onVisit={() => notify(`Starting visit for ${cust.name}`)}
+              onCustomerCall={() => notify(`Calling customer ${cust.name} (${cust.phone})`)}
+              onSalesCall={() => notify(`Starting sales call for ${cust.name}`)}
             />
           ))
         )}

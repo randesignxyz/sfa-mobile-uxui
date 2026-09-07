@@ -3505,7 +3505,7 @@
 }
 
 .customer-card-item.is-swiped-left {
-  transform: translateX(-100px);
+  transform: translateX(-220px);
 }
 
 .customer-swipe-action-panel {
@@ -3513,19 +3513,19 @@
   top: 0;
   right: 0;
   bottom: 0;
-  width: 92px;
+  width: 216px;
   display: flex;
   align-items: stretch;
   justify-content: flex-end;
+  gap: 4px;
   z-index: 1;
 }
 
-.customer-visit-action-btn {
-  width: 92px;
+.customer-swipe-btn {
+  width: 68px;
   height: 100%;
-  background: #b49a00;
   border: none;
-  border-radius: 14px;
+  border-radius: 12px;
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -3533,22 +3533,45 @@
   gap: 4px;
   color: #ffffff;
   cursor: pointer;
-  box-shadow: 0 4px 14px rgba(180, 154, 0, 0.3);
+  text-align: center;
+  padding: 6px 2px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
   transition: background 140ms ease, transform 100ms ease;
 }
 
-.customer-visit-action-btn:hover {
-  background: #9e8700;
-}
-
-.customer-visit-action-btn:active {
+.customer-swipe-btn:active {
   transform: scale(0.96);
 }
 
-.customer-visit-label {
-  font-size: 13.5px;
+.customer-swipe-btn.is-visit {
+  background: #b49a00;
+}
+
+.customer-swipe-btn.is-visit:hover {
+  background: #9e8700;
+}
+
+.customer-swipe-btn.is-customer-call {
+  background: #0284c7;
+}
+
+.customer-swipe-btn.is-customer-call:hover {
+  background: #0369a1;
+}
+
+.customer-swipe-btn.is-sales-call {
+  background: #059669;
+}
+
+.customer-swipe-btn.is-sales-call:hover {
+  background: #047857;
+}
+
+.customer-swipe-btn-label {
+  font-size: 10.5px;
   font-weight: 600;
   color: #ffffff;
+  line-height: 1.15;
   letter-spacing: 0.1px;
 }
 
