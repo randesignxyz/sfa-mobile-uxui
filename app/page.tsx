@@ -264,6 +264,7 @@ export default function Home() {
   const [isCartOpen, setIsCartOpen] = useState(false);
   const [toast, setToast] = useState('');
   const [selectedProductForCart, setSelectedProductForCart] = useState<Product | null>(null);
+  const [isLandscape, setIsLandscape] = useState(false);
 
   const visibleProducts = useMemo(
     () =>
@@ -350,8 +351,8 @@ export default function Home() {
   }
 
   return (
-    <main className="prototype-stage">
-      <section className="phone" aria-label="SFA sales order mobile prototype">
+    <main className={`prototype-stage ${isLandscape ? 'is-landscape-stage' : ''}`}>
+      <section className={`phone ${isLandscape ? 'is-landscape' : ''}`} aria-label="SFA sales order mobile prototype">
         {/* Main List Screen Header */}
         <header className="app-header-sales">
           <DeviceStatusBar />
@@ -501,10 +502,14 @@ export default function Home() {
         {isCartOpen && (
           <CartScreen
             cartLines={cartLines}
-            onBack={() => setIsCartOpen(false)}
+            onBack={() => {
+              setIsLandscape(false);
+              setIsCartOpen(false);
+            }}
             onReviewOrder={() => notify('Proceeding to Review Order')}
             onSelectPromotion={() => notify('1 active promotion selected')}
             onManualPromotion={() => notify('Manual Promotion opened')}
+            onOrientationChange={setIsLandscape}
           />
         )}
 

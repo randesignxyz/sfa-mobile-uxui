@@ -26,6 +26,7 @@ interface CartScreenProps {
   onPreview?: () => void;
   onSelectPromotion?: () => void;
   onManualPromotion?: () => void;
+  onOrientationChange?: (isLandscape: boolean) => void;
 }
 
 /** Placeholder SVG icon matching image placeholders */
@@ -226,6 +227,7 @@ export function CartScreen({
   onPreview,
   onSelectPromotion,
   onManualPromotion,
+  onOrientationChange,
 }: CartScreenProps) {
   const [toast, setToast] = useState('');
   const [isManualPromoMode, setIsManualPromoMode] = useState(false);
@@ -1130,8 +1132,12 @@ export function CartScreen({
           discount={discount}
           total={total}
           outletName="Bun Sophear"
-          onClose={() => setIsInvoicePreviewOpen(false)}
+          onClose={() => {
+            if (onOrientationChange) onOrientationChange(false);
+            setIsInvoicePreviewOpen(false);
+          }}
           onConfirmOrder={onReviewOrder}
+          onOrientationChange={onOrientationChange}
         />
       )}
 
