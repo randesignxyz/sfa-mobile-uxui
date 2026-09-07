@@ -295,7 +295,6 @@ export function OrderInvoicePreview({
                 <tr>
                   <th className="so-th-num">#</th>
                   <th className="so-th-item">Item Name</th>
-                  {isLandscape && <th className="so-th-code">Item Code</th>}
                   <th className="so-th-tier">Type</th>
                   <th className="so-th-qty">Quantity</th>
                   <th className="so-th-price">Unit Price</th>
@@ -311,9 +310,7 @@ export function OrderInvoicePreview({
                       <div className="so-item-name">
                         {row.name}
                       </div>
-                      {!isLandscape && <div className="so-item-subcode">{row.code}</div>}
                     </td>
-                    {isLandscape && <td className="so-td-code">{row.code}</td>}
                     <td className="so-td-tier">
                       <span className={`so-tier-pill ${row.type.toLowerCase()}`}>
                         {row.type}
