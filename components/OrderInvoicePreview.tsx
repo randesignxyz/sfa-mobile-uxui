@@ -62,14 +62,13 @@ export function OrderInvoicePreview({
     };
   }, [onOrientationChange]);
 
-  // Compile full list of table rows including attached promotion lines
+  // Compile list of table rows with promo items as nested sub-products
   const tableRows = useMemo(() => {
-    let index = 1;
+    let mainIndex = 1;
     const rows: {
+      id: string;
       index: number;
       name: string;
-      code: string;
-      type: string;
       qty: number;
       unit: string;
       unitPrice: number;
@@ -78,30 +77,29 @@ export function OrderInvoicePreview({
       isPromo?: boolean;
     }[] = [];
 
-    cartLines.forEach((item) => {
-      // Calculate line discount if any
+    cartLines.forEach((item, itemIdx) => {
       const lineDiscount = 0.0;
+      const currentMainIndex = mainIndex++;
 
       rows.push({
-        index: index++,
+        id: `item-${item.id || itemIdx}`,
+        index: currentMainIndex,
         name: item.productName,
-        code: item.productCode,
-        type: item.tier,
         qty: item.quantity,
         unit: item.unit || 'Case',
         unitPrice: item.unitPrice,
         discount: lineDiscount,
         totalPrice: item.totalPrice,
+        isPromo: false,
       });
 
-      // Check if this item has attached promotions
+      // Check if this item has attached promotions - render as sub-products
       const promos = linePromotions[item.id] || [];
-      promos.forEach((p) => {
+      promos.forEach((p, pIdx) => {
         rows.push({
-          index: index++,
+          id: `promo-${item.id}-${pIdx}`,
+          index: currentMainIndex,
           name: p.productName,
-          code: item.productCode,
-          type: p.type,
           qty: p.quantity,
           unit: p.unit || 'Case',
           unitPrice: 0.0,
@@ -295,7 +293,6 @@ export function OrderInvoicePreview({
                 <tr>
                   <th className="so-th-num">#</th>
                   <th className="so-th-item">Item Name</th>
-                  <th className="so-th-tier">Type</th>
                   <th className="so-th-qty">Quantity</th>
                   <th className="so-th-price">Unit Price</th>
                   <th className="so-th-discount">Discount</th>
@@ -304,23 +301,34 @@ export function OrderInvoicePreview({
               </thead>
               <tbody>
                 {tableRows.map((row) => (
-                  <tr key={row.index} className={row.isPromo ? 'promo-line-row' : ''}>
-                    <td className="so-td-num">{row.index}</td>
-                    <td className="so-td-item">
-                      <div className="so-item-name">
-                        {row.name}
-                      </div>
+                  <tr
+                    key={row.id}
+                    className={`table-row-item ${row.isPromo ? 'sub-product-row' : 'main-product-row'}`}
+                  >
+                    <td className="so-td-num">
+                      {row.isPromo ? (
+                        <span className="sub-item-tree-icon" title="Promotional item">↳</span>
+                      ) : (
+                        row.index
+                      )}
                     </td>
-                    <td className="so-td-tier">
-                      <span className={`so-tier-pill ${row.type.toLowerCase()}`}>
-                        {row.type}
-                      </span>
+                    <td className="so-td-item">
+                      <div className={`so-item-name ${row.isPromo ? 'is-sub-product-name' : ''}`}>
+                        {row.isPromo && <span className="sub-product-bullet">↳</span>}
+                        <span>{row.name}</span>
+                      </div>
                     </td>
                     <td className="so-td-qty">
                       <span className="so-qty-num">{row.qty}</span>{' '}
                       <span className="so-qty-unit">{row.unit}</span>
                     </td>
-                    <td className="so-td-price">${row.unitPrice.toFixed(3)}</td>
+                    <td className="so-td-price">
+                      {row.isPromo ? (
+                        <span className="so-price-free">$0.000</span>
+                      ) : (
+                        `$${row.unitPrice.toFixed(3)}`
+                      )}
+                    </td>
                     <td className="so-td-discount">
                       {row.discount > 0 ? (
                         <span className="so-disc-active">-${row.discount.toFixed(3)}</span>
@@ -328,7 +336,13 @@ export function OrderInvoicePreview({
                         <span className="so-disc-zero">$0.000</span>
                       )}
                     </td>
-                    <td className="so-td-total">${row.totalPrice.toFixed(3)}</td>
+                    <td className="so-td-total">
+                      {row.isPromo ? (
+                        <span className="so-total-free">$0.000</span>
+                      ) : (
+                        `$${row.totalPrice.toFixed(3)}`
+                      )}
+                    </td>
                   </tr>
                 ))}
               </tbody>

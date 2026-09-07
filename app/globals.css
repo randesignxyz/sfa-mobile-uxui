@@ -3046,7 +3046,7 @@
   background: #dedede;
 }
 
-.so-th-num, .so-th-item, .so-th-code, .so-th-tier, .so-th-qty, .so-th-price, .so-th-discount, .so-th-total {
+.so-th-num, .so-th-item, .so-th-qty, .so-th-price, .so-th-discount, .so-th-total {
   padding: 7px 8px;
   font-weight: 700;
   color: #000000;
@@ -3062,17 +3062,6 @@
 
 .so-th-item {
   text-align: left;
-}
-
-.so-th-code {
-  text-align: left;
-  font-family: monospace;
-  font-size: 11px;
-}
-
-.so-th-tier {
-  text-align: center;
-  width: 54px;
 }
 
 .so-th-qty {
@@ -3101,11 +3090,36 @@
   border-bottom: none;
 }
 
-.promo-line-row {
-  background: #fafaf5;
+/* Main product vs Sub-product styling */
+.main-product-row {
+  background: #ffffff;
 }
 
-.so-td-num, .so-td-item, .so-td-code, .so-td-tier, .so-td-qty, .so-td-price, .so-td-discount, .so-td-total {
+.sub-product-row {
+  background: #fbfbf9;
+  border-bottom: 1px dashed #e5e7eb;
+}
+
+.sub-item-tree-icon {
+  display: inline-block;
+  color: #b49a00;
+  font-size: 13px;
+  font-weight: 700;
+  line-height: 1;
+}
+
+.is-sub-product-name {
+  color: #4b5563;
+  font-size: 11px;
+}
+
+.sub-product-bullet {
+  color: #b49a00;
+  font-weight: 700;
+  margin-right: 4px;
+}
+
+.so-td-num, .so-td-item, .so-td-qty, .so-td-price, .so-td-discount, .so-td-total {
   padding: 8px 8px;
   color: #000000;
   font-size: 11.5px;
@@ -3128,54 +3142,8 @@
   color: #000000;
   display: flex;
   align-items: center;
-  gap: 6px;
+  gap: 4px;
   flex-wrap: wrap;
-}
-
-.so-item-subcode {
-  font-size: 10px;
-  color: #71717a;
-  font-family: monospace;
-}
-
-.so-td-code {
-  font-family: monospace;
-  font-size: 10.5px;
-  color: #52525b;
-}
-
-.so-td-tier {
-  text-align: center;
-}
-
-.so-tier-pill {
-  display: inline-block;
-  font-size: 9.5px;
-  font-weight: 700;
-  padding: 1px 6px;
-  border-radius: 4px;
-  background: #f4f4f5;
-  color: #3f3f46;
-}
-
-.so-tier-pill.std {
-  background: #dbeafe;
-  color: #1e40af;
-}
-
-.so-tier-pill.tdd {
-  background: #dcfce7;
-  color: #166534;
-}
-
-.so-tier-pill.promo {
-  background: #fef3c7;
-  color: #92400e;
-}
-
-.so-tier-pill.tra, .so-tier-pill.tdl, .so-tier-pill.foc {
-  background: #f3e8ff;
-  color: #6b21a8;
 }
 
 .so-td-qty {
@@ -3199,6 +3167,11 @@
 .so-td-price {
   text-align: right;
   white-space: nowrap;
+}
+
+.so-price-free, .so-total-free {
+  color: #71717a;
+  font-size: 11px;
 }
 
 .so-td-discount {
