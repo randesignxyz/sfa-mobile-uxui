@@ -269,6 +269,69 @@ export default function Home() {
   const [selectedProductForCart, setSelectedProductForCart] = useState<Product | null>(null);
   const [isLandscape, setIsLandscape] = useState(false);
 
+  // Touch and pointer swipe gesture handling
+  const [touchStartPos, setTouchStartPos] = useState<{ x: number; y: number } | null>(null);
+  const [mouseStartPos, setMouseStartPos] = useState<{ x: number; y: number } | null>(null);
+
+  const handleTouchStart = (e: React.TouchEvent) => {
+    setTouchStartPos({
+      x: e.touches[0].clientX,
+      y: e.touches[0].clientY,
+    });
+  };
+
+  const handleTouchEnd = (e: React.TouchEvent) => {
+    if (!touchStartPos) return;
+    const deltaX = e.changedTouches[0].clientX - touchStartPos.x;
+    const deltaY = e.changedTouches[0].clientY - touchStartPos.y;
+
+    if (Math.abs(deltaX) > Math.abs(deltaY) && Math.abs(deltaX) > 45) {
+      if (deltaX < 0) {
+        // Swipe Left: switch to Customer screen
+        if (activeNavTab !== 'Customer') {
+          setActiveNavTab('Customer');
+          notify('Swiped to Customers');
+        }
+      } else {
+        // Swipe Right: switch to Order catalog
+        if (activeNavTab === 'Customer') {
+          setActiveNavTab('Order');
+          notify('Swiped to Sales Catalog');
+        }
+      }
+    }
+    setTouchStartPos(null);
+  };
+
+  const handleMouseDown = (e: React.MouseEvent) => {
+    const target = e.target as HTMLElement;
+    if (target.closest('button, input, textarea, a, select')) return;
+    setMouseStartPos({ x: e.clientX, y: e.clientY });
+  };
+
+  const handleMouseUp = (e: React.MouseEvent) => {
+    if (!mouseStartPos) return;
+    const deltaX = e.clientX - mouseStartPos.x;
+    const deltaY = e.clientY - mouseStartPos.y;
+
+    if (Math.abs(deltaX) > Math.abs(deltaY) && Math.abs(deltaX) > 45) {
+      if (deltaX < 0) {
+        // Drag Left: switch to Customer screen
+        if (activeNavTab !== 'Customer') {
+          setActiveNavTab('Customer');
+          notify('Swiped to Customers');
+        }
+      } else {
+        // Drag Right: switch to Order catalog
+        if (activeNavTab === 'Customer') {
+          setActiveNavTab('Order');
+          notify('Swiped to Sales Catalog');
+        }
+      }
+    }
+    setMouseStartPos(null);
+  };
+
   const visibleProducts = useMemo(
     () =>
       category === 'All'
@@ -355,7 +418,14 @@ export default function Home() {
 
   return (
     <main className={`prototype-stage ${isLandscape ? 'is-landscape-stage' : ''}`}>
-      <section className={`phone ${isLandscape ? 'is-landscape' : ''}`} aria-label="SFA sales order mobile prototype">
+      <section
+        className={`phone ${isLandscape ? 'is-landscape' : ''}`}
+        aria-label="SFA sales order mobile prototype"
+        onTouchStart={handleTouchStart}
+        onTouchEnd={handleTouchEnd}
+        onMouseDown={handleMouseDown}
+        onMouseUp={handleMouseUp}
+      >
         {/* If Customer Tab is active, render CustomersScreen */}
         {activeNavTab === 'Customer' ? (
           <CustomersScreen
@@ -528,6 +598,98 @@ export default function Home() {
                 onManualPromotion={() => notify('Manual Promotion opened')}
                 onOrientationChange={setIsLandscape}
               />
+            )}
+
+            {/* Bottom Navigation Bar for Order Catalog */}
+            {!selectedProductForCart && !isCartOpen && (
+              <nav className="customers-bottom-nav" aria-label="Main Navigation">
+                <button
+                  type="button"
+                  className={`bottom-nav-item ${activeNavTab === 'Home' ? 'is-active' : ''}`}
+                  onClick={() => notify('Home tab')}
+                >
+                  <svg
+                    width="22"
+                    height="22"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="2"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                  >
+                    <path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" />
+                    <polyline points="9 22 9 12 15 12 15 22" />
+                  </svg>
+                  <span className="bottom-nav-label">Home</span>
+                </button>
+
+                <button
+                  type="button"
+                  className={`bottom-nav-item ${activeNavTab === 'Visit' ? 'is-active' : ''}`}
+                  onClick={() => notify('Visit tab')}
+                >
+                  <svg
+                    width="22"
+                    height="22"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="2"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                  >
+                    <path d="M20 10c0 4.993-5.539 10.193-7.399 11.799a1 1 0 0 1-1.202 0C9.539 20.193 4 14.993 4 10a8 8 0 0 1 16 0" />
+                    <circle cx="12" cy="10" r="3" />
+                  </svg>
+                  <span className="bottom-nav-label">Visit</span>
+                </button>
+
+                <button
+                  type="button"
+                  className={`bottom-nav-item ${activeNavTab === 'Order' ? 'is-active' : ''}`}
+                  onClick={() => setActiveNavTab('Order')}
+                >
+                  <svg
+                    width="22"
+                    height="22"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="2"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                  >
+                    <circle cx="8" cy="21" r="1" />
+                    <circle cx="19" cy="21" r="1" />
+                    <path d="M2.05 2.05h2l2.66 12.42a2 2 0 0 0 2 1.58h9.78a2 2 0 0 0 1.95-1.57l1.65-7.43H5.12" />
+                  </svg>
+                  <span className="bottom-nav-label">Order</span>
+                </button>
+
+                <button
+                  type="button"
+                  className="bottom-nav-item"
+                  onClick={() => setActiveNavTab('Customer')}
+                >
+                  <svg
+                    width="22"
+                    height="22"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="2"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                  >
+                    <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2" />
+                    <circle cx="9" cy="7" r="4" />
+                    <path d="M22 21v-2a4 4 0 0 0-3-3.87" />
+                    <path d="M16 3.13a4 4 0 0 1 0 7.75" />
+                  </svg>
+                  <span className="bottom-nav-label">Customer</span>
+                </button>
+              </nav>
             )}
           </>
         )}
