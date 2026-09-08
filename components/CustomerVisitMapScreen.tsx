@@ -21,6 +21,7 @@ export function CustomerVisitMapScreen({
   onViewOutletDetail,
 }: CustomerVisitMapScreenProps) {
   const [toast, setToast] = useState('');
+  const [isConfirmCheckoutOpen, setIsConfirmCheckoutOpen] = useState(false);
   const [checkInStatus, setCheckInStatus] = useState<'idle' | 'loading' | 'success'>('idle');
   const [checkOutStatus, setCheckOutStatus] = useState<'idle' | 'loading' | 'success'>('idle');
 
@@ -41,6 +42,11 @@ export function CustomerVisitMapScreen({
   };
 
   const handleCheckOutClick = () => {
+    setIsConfirmCheckoutOpen(true);
+  };
+
+  const handleProceedCheckOut = () => {
+    setIsConfirmCheckoutOpen(false);
     setCheckOutStatus('loading');
     setTimeout(() => {
       setCheckOutStatus('success');
@@ -640,6 +646,61 @@ export function CustomerVisitMapScreen({
                 </div>
               </div>
             )}
+          </div>
+        </div>
+      )}
+
+      {/* Confirm Check Out Confirmation Modal Dialog */}
+      {isConfirmCheckoutOpen && (
+        <div
+          className="checkin-modal-backdrop"
+          role="dialog"
+          aria-modal="true"
+          aria-label="Confirm Check Out"
+          onClick={() => setIsConfirmCheckoutOpen(false)}
+        >
+          <div
+            className="checkout-confirm-card"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="checkout-confirm-icon-wrap">
+              <svg
+                width="28"
+                height="28"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="#ef4444"
+                strokeWidth="2.2"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              >
+                <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" />
+                <polyline points="16 17 21 12 16 7" />
+                <line x1="21" y1="12" x2="9" y2="12" />
+              </svg>
+            </div>
+
+            <h3 className="checkout-confirm-title">Confirm Check Out</h3>
+            <p className="checkout-confirm-desc">
+              Are you sure you want to check out from <span className="checkout-customer-highlight">{customer.name}</span>?
+            </p>
+
+            <div className="checkout-confirm-actions">
+              <button
+                type="button"
+                className="checkout-cancel-btn"
+                onClick={() => setIsConfirmCheckoutOpen(false)}
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                className="checkout-confirm-btn"
+                onClick={handleProceedCheckOut}
+              >
+                Check Out
+              </button>
+            </div>
           </div>
         </div>
       )}
