@@ -17,6 +17,7 @@ export function CustomerVisitMapScreen({
   onViewOutletDetail,
 }: CustomerVisitMapScreenProps) {
   const [toast, setToast] = useState('');
+  const [checkInStatus, setCheckInStatus] = useState<'idle' | 'loading' | 'success'>('idle');
 
   function notify(msg: string) {
     setToast(msg);
@@ -24,10 +25,14 @@ export function CustomerVisitMapScreen({
   }
 
   const handleCheckInClick = () => {
-    notify(`Checked in at ${customer.name}`);
+    setCheckInStatus('loading');
     setTimeout(() => {
-      onCheckIn(customer);
-    }, 600);
+      setCheckInStatus('success');
+      setTimeout(() => {
+        setCheckInStatus('idle');
+        onCheckIn(customer);
+      }, 1500);
+    }, 1400);
   };
 
   return (
@@ -527,6 +532,70 @@ export function CustomerVisitMapScreen({
           </button>
         </div>
       </div>
+
+      {/* Check In Loading & Success Modal Overlay */}
+      {checkInStatus !== 'idle' && (
+        <div className="checkin-modal-backdrop" role="dialog" aria-modal="true" aria-label="Check in status">
+          <div className="checkin-modal-card">
+            {checkInStatus === 'loading' && (
+              <div className="checkin-modal-content">
+                <div className="checkin-spinner-wrap">
+                  <svg
+                    className="checkin-spinner-svg"
+                    width="54"
+                    height="54"
+                    viewBox="0 0 50 50"
+                  >
+                    <defs>
+                      <linearGradient id="spinnerGoldGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+                        <stop offset="0%" stopColor="#b49a00" stopOpacity="1" />
+                        <stop offset="60%" stopColor="#d4af37" stopOpacity="0.7" />
+                        <stop offset="100%" stopColor="#b49a00" stopOpacity="0" />
+                      </linearGradient>
+                    </defs>
+                    <circle
+                      cx="25"
+                      cy="25"
+                      r="20"
+                      fill="none"
+                      stroke="url(#spinnerGoldGrad)"
+                      strokeWidth="4.5"
+                      strokeLinecap="round"
+                      strokeDasharray="95 35"
+                    />
+                  </svg>
+                </div>
+                <h3 className="checkin-modal-title">Check...</h3>
+              </div>
+            )}
+
+            {checkInStatus === 'success' && (
+              <div className="checkin-modal-content is-success">
+                <div className="checkin-success-icon-wrap">
+                  <svg
+                    className="checkin-success-svg"
+                    width="62"
+                    height="62"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="#10b981"
+                    strokeWidth="2.6"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                  >
+                    <circle cx="12" cy="12" r="10" />
+                    <path d="m9 12 2 2 4-4" />
+                  </svg>
+                </div>
+                <div className="checkin-modal-success-text">
+                  <h3 className="checkin-modal-title">Check-in</h3>
+                  <h3 className="checkin-modal-title">Successful</h3>
+                </div>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
 
       {toast && (
         <div className="toast-message" role="status">
