@@ -51,8 +51,8 @@ export function CustomerVisitMapScreen({
         } else {
           onBack();
         }
-      }, 1500);
-    }, 1400);
+      }, 1100);
+    }, 1000);
   };
 
   return (

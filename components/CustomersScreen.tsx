@@ -497,6 +497,8 @@ export function CustomersScreen({
         isCheckedIn={isCheckedIn}
         onBack={() => {
           setActiveMapVisitCustomer(null);
+          setVisitCustomer(null);
+          setSwipedCustomerId(null);
           if (onCloseMapCustomer) onCloseMapCustomer();
         }}
         onCheckIn={(cust) => {
@@ -509,13 +511,15 @@ export function CustomersScreen({
           }
         }}
         onCheckOut={(cust) => {
+          setActiveMapVisitCustomer(null);
+          setVisitCustomer(null);
+          setSwipedCustomerId(null);
+          if (onCloseMapCustomer) onCloseMapCustomer();
           if (onCheckOutCustomer) {
             onCheckOutCustomer(cust);
           } else {
             notify(`Checked out from ${cust.name}`);
           }
-          setActiveMapVisitCustomer(null);
-          if (onCloseMapCustomer) onCloseMapCustomer();
         }}
         onViewOutletDetail={(cust) => {
           setActiveMapVisitCustomer(null);

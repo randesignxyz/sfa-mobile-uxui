@@ -232,6 +232,7 @@ export default function Home() {
   const handleCheckOutCustomer = (cust: Customer) => {
     setCheckedInCustomerIds((prev) => prev.filter((id) => id !== cust.id));
     setActiveMapCustomer(null);
+    setActiveNavTab('Customer');
     notify(`Checked out from ${cust.name}`);
   };
 
