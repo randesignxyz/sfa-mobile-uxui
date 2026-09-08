@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useMemo, useRef } from 'react';
+import { CustomerVisitMapScreen } from './CustomerVisitMapScreen';
 
 export interface ShippingAddress {
   id: string;
@@ -438,11 +439,35 @@ export function CustomersScreen({
   const [isSearchOpen, setIsSearchOpen] = useState(false);
   const [swipedCustomerId, setSwipedCustomerId] = useState<string | null>(null);
   const [visitCustomer, setVisitCustomer] = useState<Customer | null>(null);
+  const [activeMapVisitCustomer, setActiveMapVisitCustomer] = useState<Customer | null>(null);
   const [toast, setToast] = useState('');
 
   function notify(msg: string) {
     setToast(msg);
     setTimeout(() => setToast(''), 2000);
+  }
+
+  if (activeMapVisitCustomer) {
+    return (
+      <CustomerVisitMapScreen
+        customer={activeMapVisitCustomer}
+        onBack={() => setActiveMapVisitCustomer(null)}
+        onCheckIn={(cust) => {
+          setActiveMapVisitCustomer(null);
+          if (onSelectCustomer) {
+            onSelectCustomer(cust);
+          } else {
+            notify(`Checked in at ${cust.name}`);
+          }
+        }}
+        onViewOutletDetail={(cust) => {
+          setActiveMapVisitCustomer(null);
+          if (onSelectCustomer) {
+            onSelectCustomer(cust);
+          }
+        }}
+      />
+    );
   }
 
   const allCount = 383;
@@ -836,11 +861,7 @@ export function CustomersScreen({
                 onClick={() => {
                   const cust = visitCustomer;
                   setVisitCustomer(null);
-                  if (onSelectCustomer) {
-                    onSelectCustomer(cust);
-                  } else {
-                    notify(`Starting visit for ${cust.name}`);
-                  }
+                  setActiveMapVisitCustomer(cust);
                 }}
                 role="button"
                 tabIndex={0}
@@ -878,11 +899,7 @@ export function CustomersScreen({
                     e.stopPropagation();
                     const cust = visitCustomer;
                     setVisitCustomer(null);
-                    if (onSelectCustomer) {
-                      onSelectCustomer(cust);
-                    } else {
-                      notify(`Starting visit for ${cust.name}`);
-                    }
+                    setActiveMapVisitCustomer(cust);
                   }}
                   aria-label={`Confirm shipping address for ${visitCustomer.name}`}
                 >
