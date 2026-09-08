@@ -403,11 +403,11 @@
 .product-cards-container {
   height: 100%;
   overflow-y: auto;
-  padding: 242px 16px 96px;
+  padding: 242px 16px 84px;
   scrollbar-width: none;
   display: flex;
   flex-direction: column;
-  gap: 16px;
+  gap: 12px;
   background: #f8f8f9;
 }
 
