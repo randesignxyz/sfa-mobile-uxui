@@ -2,6 +2,12 @@
 
 import { useState, useMemo, useRef } from 'react';
 
+export interface ShippingAddress {
+  id: string;
+  address: string;
+  isDefault?: boolean;
+}
+
 export interface Customer {
   id: string;
   khmerName: string;
@@ -11,6 +17,7 @@ export interface Customer {
   type: 'Direct' | 'Indirect';
   isProspect?: boolean;
   address?: string;
+  shippingAddresses?: ShippingAddress[];
   image?: string;
 }
 
@@ -22,7 +29,14 @@ export const initialCustomers: Customer[] = [
     code: 'L903030',
     phone: '093 636332',
     type: 'Direct',
-    address: 'St 271, Phsar Doeum Thkov, Phnom Penh',
+    address: 'In front of Khmer Soviet Friendship Hospital, Chamraeun Phal, Boeng Tumpun 1, Mean Chey, Phnom Penh',
+    shippingAddresses: [
+      {
+        id: 'addr-1',
+        address: 'In front of Khmer Soviet Friendship Hospital, Chamraeun Phal, Boeng Tumpun 1, Mean Chey, Phnom Penh',
+        isDefault: true,
+      },
+    ],
   },
   {
     id: 'c-2',
@@ -31,7 +45,14 @@ export const initialCustomers: Customer[] = [
     code: 'C000017',
     phone: '097 8050400',
     type: 'Direct',
-    address: 'St 598, Toul Kork, Phnom Penh',
+    address: '#89, St 598, Sangkat Toul Kork, Khan Tuol Kouk, Phnom Penh',
+    shippingAddresses: [
+      {
+        id: 'addr-2',
+        address: '#89, St 598, Sangkat Toul Kork, Khan Tuol Kouk, Phnom Penh',
+        isDefault: true,
+      },
+    ],
   },
   {
     id: 'c-3',
@@ -40,7 +61,7 @@ export const initialCustomers: Customer[] = [
     code: 'L905421',
     phone: '012 914330',
     type: 'Indirect',
-    address: 'Russian Blvd, Teuk Thla, Phnom Penh',
+    address: 'Russian Blvd, Sangkat Teuk Thla, Khan Sen Sok, Phnom Penh',
   },
   {
     id: 'c-4',
@@ -416,6 +437,7 @@ export function CustomersScreen({
   const [searchQuery, setSearchQuery] = useState('');
   const [isSearchOpen, setIsSearchOpen] = useState(false);
   const [swipedCustomerId, setSwipedCustomerId] = useState<string | null>(null);
+  const [visitCustomer, setVisitCustomer] = useState<Customer | null>(null);
   const [toast, setToast] = useState('');
 
   function notify(msg: string) {
@@ -633,7 +655,10 @@ export function CustomersScreen({
                   notify(`Selected ${cust.name}`);
                 }
               }}
-              onVisit={() => notify(`Starting visit for ${cust.name}`)}
+              onVisit={() => {
+                setSwipedCustomerId(null);
+                setVisitCustomer(cust);
+              }}
               onCustomerCall={() => {
                 if (onCustomerCall) {
                   onCustomerCall(cust);
@@ -787,6 +812,103 @@ export function CustomersScreen({
           <span className="bottom-nav-label">Customer</span>
         </button>
       </nav>
+
+      {/* Shipping Address Bottom Sheet for Visit */}
+      {visitCustomer && (
+        <div
+          className="customer-bottom-sheet-backdrop"
+          onClick={() => setVisitCustomer(null)}
+          role="dialog"
+          aria-modal="true"
+          aria-label="Choose Shipping Address for Visit"
+        >
+          <div
+            className="customer-bottom-sheet-modal"
+            onClick={(e) => e.stopPropagation()}
+          >
+            {/* Grab Handle */}
+            <div className="bottom-sheet-handle" />
+
+            {/* Shipping Address Card List */}
+            <div className="shipping-address-list">
+              <div
+                className="shipping-address-card"
+                onClick={() => {
+                  const cust = visitCustomer;
+                  setVisitCustomer(null);
+                  if (onSelectCustomer) {
+                    onSelectCustomer(cust);
+                  } else {
+                    notify(`Starting visit for ${cust.name}`);
+                  }
+                }}
+                role="button"
+                tabIndex={0}
+              >
+                <div className="shipping-address-left">
+                  <div className="shipping-map-icon">
+                    <svg
+                      width="20"
+                      height="20"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="#B49A00"
+                      strokeWidth="2.2"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                    >
+                      <polygon points="3 6 9 3 15 6 21 3 21 18 15 21 9 18 3 21" />
+                      <line x1="9" y1="3" x2="9" y2="18" />
+                      <line x1="15" y1="6" x2="15" y2="21" />
+                    </svg>
+                  </div>
+                  <div className="shipping-address-text-group">
+                    <h3 className="shipping-customer-name">{visitCustomer.name}</h3>
+                    <p className="shipping-customer-address">
+                      {visitCustomer.address ||
+                        'In front of Khmer Soviet Friendship Hospital, Chamraeun Phal, Boeng Tumpun 1, Mean Chey, Phnom Penh'}
+                    </p>
+                  </div>
+                </div>
+
+                <button
+                  type="button"
+                  className="shipping-badge-btn"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    const cust = visitCustomer;
+                    setVisitCustomer(null);
+                    if (onSelectCustomer) {
+                      onSelectCustomer(cust);
+                    } else {
+                      notify(`Starting visit for ${cust.name}`);
+                    }
+                  }}
+                  aria-label={`Confirm shipping address for ${visitCustomer.name}`}
+                >
+                  <svg
+                    width="15"
+                    height="15"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="#0284c7"
+                    strokeWidth="2.2"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                  >
+                    <path d="M14 18V6a2 2 0 0 0-2-2H4a2 2 0 0 0-2 2v11a1 1 0 0 0 1 1h2" />
+                    <path d="M15 18H9" />
+                    <path d="M19 18h2a1 1 0 0 0 1-1v-5l-3-4h-4" />
+                    <circle cx="7" cy="18" r="2" />
+                    <circle cx="17" cy="18" r="2" />
+                  </svg>
+                  <span>Shipping</span>
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
 
       {toast && (
         <div className="toast-message" role="status">
