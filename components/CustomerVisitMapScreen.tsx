@@ -542,8 +542,8 @@ export function CustomerVisitMapScreen({
                 <div className="checkin-spinner-wrap">
                   <svg
                     className="checkin-spinner-svg"
-                    width="54"
-                    height="54"
+                    width="48"
+                    height="48"
                     viewBox="0 0 50 50"
                   >
                     <defs>
@@ -559,7 +559,7 @@ export function CustomerVisitMapScreen({
                       r="20"
                       fill="none"
                       stroke="url(#spinnerGoldGrad)"
-                      strokeWidth="4.5"
+                      strokeWidth="4"
                       strokeLinecap="round"
                       strokeDasharray="95 35"
                     />
@@ -574,12 +574,12 @@ export function CustomerVisitMapScreen({
                 <div className="checkin-success-icon-wrap">
                   <svg
                     className="checkin-success-svg"
-                    width="62"
-                    height="62"
+                    width="54"
+                    height="54"
                     viewBox="0 0 24 24"
                     fill="none"
                     stroke="#10b981"
-                    strokeWidth="2.6"
+                    strokeWidth="2.4"
                     strokeLinecap="round"
                     strokeLinejoin="round"
                   >
