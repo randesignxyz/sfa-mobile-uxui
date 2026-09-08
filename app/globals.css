@@ -3513,6 +3513,10 @@
   transform: translateX(-228px);
 }
 
+.customer-card-item.is-swiped-left:active {
+  transform: translateX(-228px) scale(0.99);
+}
+
 .customer-swipe-action-panel {
   position: absolute;
   top: 0;

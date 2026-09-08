@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useRef } from 'react';
 
 export interface Customer {
   id: string;
@@ -141,72 +141,113 @@ function SwipeableCustomerCard({
   onCustomerCall,
   onSalesCall,
 }: SwipeableCustomerCardProps) {
-  const [dragStart, setDragStart] = useState<{ x: number; y: number; time: number } | null>(null);
+  const pointerStartRef = useRef<{ x: number; y: number; time: number } | null>(null);
+  const isDraggingRef = useRef(false);
 
   const handlePointerDown = (e: React.PointerEvent) => {
     const target = e.target as HTMLElement;
     if (target.closest('.customer-swipe-btn')) return;
-    setDragStart({ x: e.clientX, y: e.clientY, time: Date.now() });
+    pointerStartRef.current = { x: e.clientX, y: e.clientY, time: Date.now() };
+    isDraggingRef.current = false;
+  };
+
+  const handlePointerMove = (e: React.PointerEvent) => {
+    if (!pointerStartRef.current) return;
+    const deltaX = e.clientX - pointerStartRef.current.x;
+    const deltaY = e.clientY - pointerStartRef.current.y;
+    if (Math.abs(deltaX) > 8 || Math.abs(deltaY) > 8) {
+      isDraggingRef.current = true;
+    }
   };
 
   const handlePointerUp = (e: React.PointerEvent) => {
-    if (!dragStart) return;
-    const deltaX = e.clientX - dragStart.x;
-    const deltaY = e.clientY - dragStart.y;
+    if (!pointerStartRef.current) return;
+    const deltaX = e.clientX - pointerStartRef.current.x;
+    const deltaY = e.clientY - pointerStartRef.current.y;
+    const isHorizontal = Math.abs(deltaX) > Math.abs(deltaY) * 0.6;
 
-    if (Math.abs(deltaX) > 20 && Math.abs(deltaX) > Math.abs(deltaY) * 0.5) {
+    if (Math.abs(deltaX) > 20 && isHorizontal) {
       if (deltaX < 0) {
         onSwipeLeft();
       } else {
         onSwipeRight();
       }
     }
-    setDragStart(null);
+    pointerStartRef.current = null;
+    setTimeout(() => {
+      isDraggingRef.current = false;
+    }, 150);
   };
 
   const handleTouchStart = (e: React.TouchEvent) => {
     const target = e.target as HTMLElement;
     if (target.closest('.customer-swipe-btn')) return;
-    setDragStart({
+    pointerStartRef.current = {
       x: e.touches[0].clientX,
       y: e.touches[0].clientY,
       time: Date.now(),
-    });
+    };
+    isDraggingRef.current = false;
+  };
+
+  const handleTouchMove = (e: React.TouchEvent) => {
+    if (!pointerStartRef.current) return;
+    const deltaX = e.touches[0].clientX - pointerStartRef.current.x;
+    const deltaY = e.touches[0].clientY - pointerStartRef.current.y;
+    if (Math.abs(deltaX) > 8 || Math.abs(deltaY) > 8) {
+      isDraggingRef.current = true;
+    }
   };
 
   const handleTouchEnd = (e: React.TouchEvent) => {
-    if (!dragStart) return;
-    const deltaX = e.changedTouches[0].clientX - dragStart.x;
-    const deltaY = e.changedTouches[0].clientY - dragStart.y;
+    if (!pointerStartRef.current) return;
+    const deltaX = e.changedTouches[0].clientX - pointerStartRef.current.x;
+    const deltaY = e.changedTouches[0].clientY - pointerStartRef.current.y;
+    const isHorizontal = Math.abs(deltaX) > Math.abs(deltaY) * 0.6;
 
-    if (Math.abs(deltaX) > 20 && Math.abs(deltaX) > Math.abs(deltaY) * 0.5) {
+    if (Math.abs(deltaX) > 20 && isHorizontal) {
       if (deltaX < 0) {
         onSwipeLeft();
       } else {
         onSwipeRight();
       }
     }
-    setDragStart(null);
+    pointerStartRef.current = null;
+    setTimeout(() => {
+      isDraggingRef.current = false;
+    }, 150);
+  };
+
+  const handleCardClick = (e: React.MouseEvent) => {
+    if (isDraggingRef.current) {
+      e.preventDefault();
+      e.stopPropagation();
+      return;
+    }
+    if (isSwiped) {
+      onSwipeRight();
+    } else {
+      onSelect();
+    }
   };
 
   return (
     <div
       className={`customer-swipe-row-container ${isSwiped ? 'is-swiped' : ''}`}
       onPointerDown={handlePointerDown}
+      onPointerMove={handlePointerMove}
       onPointerUp={handlePointerUp}
-      onPointerCancel={() => setDragStart(null)}
+      onPointerCancel={() => {
+        pointerStartRef.current = null;
+        isDraggingRef.current = false;
+      }}
       onTouchStart={handleTouchStart}
+      onTouchMove={handleTouchMove}
       onTouchEnd={handleTouchEnd}
     >
       <article
         className={`customer-card-item ${isSwiped ? 'is-swiped-left' : ''}`}
-        onClick={() => {
-          if (isSwiped) {
-            onSwipeRight();
-          } else {
-            onSelect();
-          }
-        }}
+        onClick={handleCardClick}
         role="button"
         tabIndex={0}
         onKeyDown={(e) => {
