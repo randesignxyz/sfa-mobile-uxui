@@ -4178,16 +4178,21 @@
 /* Check-in Loading & Success Modal Overlay */
 .checkin-modal-backdrop {
   position: absolute;
-  inset: 0;
-  background: rgba(0, 0, 0, 0.45);
-  backdrop-filter: blur(2px);
-  -webkit-backdrop-filter: blur(2px);
-  z-index: 100;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.48);
+  backdrop-filter: blur(3px);
+  -webkit-backdrop-filter: blur(3px);
+  z-index: 999;
   display: flex;
   align-items: center;
   justify-content: center;
   padding: 24px;
   animation: fadeInModal 180ms ease forwards;
+  border-radius: 44px;
+  overflow: hidden;
 }
 
 @keyframes fadeInModal {
@@ -4205,12 +4210,13 @@
   width: 100%;
   max-width: 290px;
   min-height: 160px;
-  padding: 34px 24px 30px;
+  padding: 36px 24px 32px;
   display: flex;
   align-items: center;
   justify-content: center;
-  box-shadow: 0 16px 40px rgba(0, 0, 0, 0.22);
+  box-shadow: 0 20px 48px rgba(0, 0, 0, 0.28);
   animation: scaleUpModal 240ms cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  margin: auto;
 }
 
 @keyframes scaleUpModal {
