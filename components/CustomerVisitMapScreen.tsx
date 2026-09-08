@@ -17,7 +17,6 @@ export function CustomerVisitMapScreen({
   onViewOutletDetail,
 }: CustomerVisitMapScreenProps) {
   const [toast, setToast] = useState('');
-  const [isCheckedIn, setIsCheckedIn] = useState(false);
 
   function notify(msg: string) {
     setToast(msg);
@@ -25,7 +24,6 @@ export function CustomerVisitMapScreen({
   }
 
   const handleCheckInClick = () => {
-    setIsCheckedIn(true);
     notify(`Checked in at ${customer.name}`);
     setTimeout(() => {
       onCheckIn(customer);
@@ -34,189 +32,213 @@ export function CustomerVisitMapScreen({
 
   return (
     <div className="map-visit-screen-container" role="region" aria-label="Customer Visit Map">
-      {/* Map Background Canvas / SVG Simulation */}
+      {/* Map Viewport */}
       <div className="map-viewport-wrapper">
         <svg
           className="map-vector-canvas"
-          viewBox="0 0 390 540"
+          viewBox="0 0 390 520"
           preserveAspectRatio="xMidYMid slice"
         >
           <defs>
             {/* Map Land Background */}
             <linearGradient id="mapBgGrad" x1="0%" y1="0%" x2="100%" y2="100%">
-              <stop offset="0%" stopColor="#f4f6f8" />
-              <stop offset="100%" stopColor="#e9edf2" />
+              <stop offset="0%" stopColor="#f5f7fa" />
+              <stop offset="100%" stopColor="#edf1f6" />
             </linearGradient>
 
-            {/* Urban Area Zones */}
-            <linearGradient id="hospitalZone" x1="0%" y1="0%" x2="100%" y2="100%">
-              <stop offset="0%" stopColor="#fee2e2" stopOpacity="0.7" />
-              <stop offset="100%" stopColor="#fecaca" stopOpacity="0.85" />
+            {/* Hospital Zone Area */}
+            <linearGradient id="hospitalZoneGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+              <stop offset="0%" stopColor="#fee2e2" stopOpacity="0.8" />
+              <stop offset="100%" stopColor="#fecaca" stopOpacity="0.9" />
             </linearGradient>
 
-            {/* Route Glow */}
-            <filter id="routeGlow" x="-20%" y="-20%" width="140%" height="140%">
-              <feDropShadow dx="0" dy="2" stdDeviation="2" floodColor="#b49a00" floodOpacity="0.3" />
+            {/* Subtle Route Drop Shadow */}
+            <filter id="routeShadow" x="-20%" y="-20%" width="140%" height="140%">
+              <feDropShadow dx="0" dy="1.5" stdDeviation="1.5" floodColor="#92400e" floodOpacity="0.25" />
+            </filter>
+
+            {/* Marker Pin Drop Shadow */}
+            <filter id="pinShadow" x="-40%" y="-40%" width="180%" height="180%">
+              <feDropShadow dx="0" dy="4" stdDeviation="3" floodColor="#000000" floodOpacity="0.25" />
             </filter>
           </defs>
 
-          {/* Background land */}
-          <rect width="390" height="540" fill="url(#mapBgGrad)" />
+          {/* Base Map Land */}
+          <rect width="390" height="520" fill="url(#mapBgGrad)" />
 
-          {/* River / Canal Waterway */}
+          {/* Curved Canal Waterway in bottom left */}
           <path
-            d="M -10 330 C 80 340, 120 440, 240 430 C 300 425, 340 400, 410 390"
+            d="M -20 310 C 60 330, 110 440, 240 430 C 310 425, 340 400, 410 390"
             fill="none"
-            stroke="#bae6fd"
-            strokeWidth="24"
+            stroke="#cbeafe"
+            strokeWidth="30"
             strokeLinecap="round"
           />
           <path
-            d="M -10 330 C 80 340, 120 440, 240 430 C 300 425, 340 400, 410 390"
+            d="M -20 310 C 60 330, 110 440, 240 430 C 310 425, 340 400, 410 390"
             fill="none"
-            stroke="#7dd3fc"
-            strokeWidth="16"
+            stroke="#93c5fd"
+            strokeWidth="18"
             strokeLinecap="round"
           />
 
-          {/* Hospital / Facility Zone */}
+          {/* Hospital Compound Polygon */}
           <polygon
-            points="140,260 250,230 270,310 160,330"
-            fill="url(#hospitalZone)"
+            points="180,240 280,225 295,305 195,320"
+            fill="url(#hospitalZoneGrad)"
             stroke="#fca5a5"
-            strokeWidth="1.5"
-            strokeDasharray="4 3"
+            strokeWidth="1.2"
+          />
+          <polygon
+            points="240,270 275,265 270,300 235,305"
+            fill="#fee2e2"
+            stroke="#f87171"
+            strokeWidth="0.8"
           />
 
-          {/* Secondary Grid Streets */}
-          <g stroke="#ffffff" strokeWidth="10" strokeLinecap="round" strokeLinejoin="round">
-            {/* Horizontal / Angled streets */}
-            <path d="M -20 70 L 410 180" />
-            <path d="M -20 160 L 410 270" />
-            <path d="M -20 280 L 410 390" />
-            <path d="M -20 210 L 410 320" />
-            <path d="M 60 460 L 380 430" />
-            
-            {/* Cross streets */}
-            <path d="M 50 -20 L -30 360" />
-            <path d="M 150 -20 L 70 380" />
-            <path d="M 270 -20 L 170 420" />
-            <path d="M 370 -20 L 290 440" />
-            <path d="M 340 180 L 390 400" />
+          {/* Street Grid - Road Bases (Thick white lanes) */}
+          <g stroke="#ffffff" strokeWidth="12" strokeLinecap="round" strokeLinejoin="round">
+            {/* Major diagonal road - Mao Tse Toung Blvd */}
+            <path d="M 210 -20 L 410 170" />
+            <path d="M 120 -20 L 410 240" />
+
+            {/* Street 271 */}
+            <path d="M 85 -20 L -30 380" />
+            <path d="M 140 280 L 410 360" />
+
+            {/* Grid Cross Streets */}
+            <path d="M -20 50 L 410 160" />
+            <path d="M -20 120 L 410 230" />
+            <path d="M -20 180 L 410 290" />
+            <path d="M -20 240 L 410 350" />
+            <path d="M 40 460 L 380 420" />
+
+            {/* Vertical/Diagonal connectors */}
+            <path d="M 170 -20 L 70 380" />
+            <path d="M 260 -20 L 160 410" />
+            <path d="M 330 -20 L 250 430" />
+            <path d="M 380 90 L 300 450" />
           </g>
 
-          {/* Street Outlines / Shadows */}
-          <g stroke="#e2e8f0" strokeWidth="1" fill="none">
-            <path d="M -20 65 L 410 175" />
-            <path d="M -20 75 L 410 185" />
-            <path d="M -20 155 L 410 265" />
-            <path d="M -20 165 L 410 275" />
-            <path d="M 145 -20 L 65 380" />
-            <path d="M 155 -20 L 75 380" />
-            <path d="M 265 -20 L 165 420" />
-            <path d="M 275 -20 L 175 420" />
+          {/* Street Outlines & Details */}
+          <g stroke="#e2e8f0" strokeWidth="1.2" fill="none">
+            <path d="M 205 -20 L 405 170" />
+            <path d="M 215 -20 L 415 170" />
+            <path d="M -20 45 L 410 155" />
+            <path d="M -20 55 L 410 165" />
+            <path d="M -20 115 L 410 225" />
+            <path d="M -20 125 L 410 235" />
+            <path d="M 165 -20 L 65 380" />
+            <path d="M 175 -20 L 75 380" />
+            <path d="M 255 -20 L 155 410" />
+            <path d="M 265 -20 L 165 410" />
           </g>
 
-          {/* Street Labels */}
-          <g fill="#94a3b8" fontSize="9" fontWeight="600" fontFamily="sans-serif">
-            <text x="35" y="190" transform="rotate(74, 35, 190)">Street 271</text>
-            <text x="210" y="70" transform="rotate(28, 210, 70)">Mao Tse Toung Blvd (245)</text>
-            <text x="110" y="145" transform="rotate(-40, 110, 145)">St 430</text>
-            <text x="100" y="165" transform="rotate(-40, 100, 165)">St 209</text>
-            <text x="235" y="140" transform="rotate(74, 235, 140)">St 414</text>
-            <text x="290" y="150" transform="rotate(74, 290, 150)">Street 199</text>
-            <text x="260" y="190" transform="rotate(-40, 260, 190)">St 430</text>
-            <text x="175" y="210" transform="rotate(-40, 175, 210)">Topaz St</text>
-            <text x="170" y="230" transform="rotate(-40, 170, 230)">Jade</text>
-            <text x="155" y="248" transform="rotate(-40, 155, 248)">St Gold</text>
-            <text x="240" y="335" transform="rotate(15, 240, 335)">Street 271</text>
-            <text x="66" y="240" transform="rotate(28, 66, 240)">St Silver</text>
-            <text x="295" y="400" transform="rotate(74, 295, 400)">77BT</text>
-            <text x="320" y="155" fill="#64748b" fontSize="10">Vanda Univ</text>
-            <text x="325" y="215" fill="#ea580c" fontSize="10">Ancle Hai H...</text>
+          {/* Street Names / Text Labels */}
+          <g fill="#94a3b8" fontSize="8.5" fontWeight="600" fontFamily="sans-serif">
+            <text x="35" y="180" transform="rotate(74, 35, 180)">Street 271</text>
+            <text x="210" y="62" transform="rotate(32, 210, 62)">Mao Tse Toung Blvd (245)</text>
+            <text x="105" y="132" transform="rotate(-38, 105, 132)">St 430</text>
+            <text x="95" y="152" transform="rotate(-38, 95, 152)">St 209</text>
+            <text x="235" y="130" transform="rotate(74, 235, 130)">St 414</text>
+            <text x="290" y="145" transform="rotate(74, 290, 145)">Street 199</text>
+            <text x="260" y="185" transform="rotate(-38, 260, 185)">St 430</text>
+            <text x="165" y="195" transform="rotate(-38, 165, 195)">Topaz St</text>
+            <text x="165" y="215" transform="rotate(-38, 165, 215)">Jade</text>
+            <text x="150" y="235" transform="rotate(-38, 150, 235)">St Gold</text>
+            <text x="230" y="325" transform="rotate(12, 230, 325)">Street 271</text>
+            <text x="56" y="230" transform="rotate(32, 56, 230)">St Silver</text>
+            <text x="295" y="390" transform="rotate(74, 295, 390)">77BT</text>
+            <text x="260" y="70" fill="#64748b" fontSize="8.5">St 388</text>
+            <text x="245" y="45" fill="#64748b" fontSize="8.5">St 384</text>
+            <text x="325" y="145" fill="#64748b" fontSize="9.5">Vanda Univ</text>
+            <text x="320" y="205" fill="#ea580c" fontSize="9.5">Ancle Hai H...</text>
           </g>
 
-          {/* Hospital Label */}
-          <g fill="#ef4444" fontSize="10" fontWeight="700" textAnchor="middle">
-            <text x="158" y="276">KHMER - SOVIET</text>
-            <text x="158" y="288">FRIENDSHIP</text>
+          {/* Hospital Center Label */}
+          <g fill="#ef4444" fontSize="9.5" fontWeight="700" textAnchor="middle">
+            <text x="145" y="260">KHMER - SOVIET</text>
+            <text x="145" y="272">FRIENDSHIP</text>
           </g>
 
-          {/* Map POI Icons */}
-          {/* Hospital Icon */}
-          <g transform="translate(218, 265)">
-            <circle cx="11" cy="11" r="11" fill="#ef4444" />
-            <text x="11" y="15" fill="#ffffff" fontSize="12" fontWeight="bold" textAnchor="middle">H</text>
+          {/* POI Markers */}
+          {/* Hospital Red H Icon */}
+          <g transform="translate(215, 252)">
+            <circle cx="10" cy="10" r="10" fill="#ef4444" />
+            <text x="10" y="14" fill="#ffffff" fontSize="11" fontWeight="bold" textAnchor="middle">H</text>
           </g>
 
-          {/* Bus Stop POIs */}
+          {/* Bus Stop Badges */}
           <g transform="translate(150, 48)">
-            <circle cx="8" cy="8" r="7" fill="#64748b" />
-            <text x="8" y="12" fill="#ffffff" fontSize="8" textAnchor="middle">🚏</text>
+            <circle cx="7" cy="7" r="6.5" fill="#64748b" />
+            <text x="7" y="10" fill="#ffffff" fontSize="7" textAnchor="middle">🚏</text>
           </g>
-          <g transform="translate(68, 100)">
-            <circle cx="7" cy="7" r="6" fill="#64748b" />
+          <g transform="translate(68, 95)">
+            <circle cx="6.5" cy="6.5" r="6" fill="#64748b" />
+            <text x="6.5" y="9.5" fill="#ffffff" fontSize="6" textAnchor="middle">🚏</text>
           </g>
-          <g transform="translate(64, 195)">
-            <circle cx="7" cy="7" r="6" fill="#64748b" />
+          <g transform="translate(64, 185)">
+            <circle cx="6.5" cy="6.5" r="6" fill="#64748b" />
+            <text x="6.5" y="9.5" fill="#ffffff" fontSize="6" textAnchor="middle">🚏</text>
           </g>
-          <g transform="translate(176, 252)">
-            <circle cx="7" cy="7" r="6" fill="#64748b" />
+          <g transform="translate(174, 282)">
+            <circle cx="6.5" cy="6.5" r="6" fill="#64748b" />
+            <text x="6.5" y="9.5" fill="#ffffff" fontSize="6" textAnchor="middle">🚏</text>
           </g>
-          <g transform="translate(312, 260)">
-            <circle cx="7" cy="7" r="6" fill="#64748b" />
+          <g transform="translate(308, 290)">
+            <circle cx="6.5" cy="6.5" r="6" fill="#64748b" />
+            <text x="6.5" y="9.5" fill="#ffffff" fontSize="6" textAnchor="middle">🚏</text>
           </g>
 
-          {/* Restaurant POI */}
-          <g transform="translate(180, 296)">
+          {/* Restaurant POI on Canal */}
+          <g transform="translate(176, 335)">
             <circle cx="11" cy="11" r="11" fill="#f97316" />
             <text x="11" y="15" fill="#ffffff" fontSize="10" textAnchor="middle">🍴</text>
           </g>
 
-          {/* Cafe POI */}
-          <g transform="translate(5, 302)">
-            <circle cx="11" cy="11" r="11" fill="#ea580c" />
-            <text x="11" y="15" fill="#ffffff" fontSize="9" textAnchor="middle">☕</text>
+          {/* Cafe POI on St 271 */}
+          <g transform="translate(4, 340)">
+            <circle cx="10" cy="10" r="10" fill="#ea580c" />
+            <text x="10" y="14" fill="#ffffff" fontSize="9" textAnchor="middle">☕</text>
           </g>
 
           {/* GOLD ROUTE NAVIGATION PATH */}
           <path
-            d="M 355 90 L 350 102 L 296 182 L 222 225 L 145 270 L 190 252"
+            d="M 350 90 L 345 98 L 298 172 L 222 216 L 142 272 L 188 255"
             fill="none"
             stroke="#b49a00"
             strokeWidth="5.5"
             strokeLinecap="round"
             strokeLinejoin="round"
-            filter="url(#routeGlow)"
+            filter="url(#routeShadow)"
           />
 
-          {/* START / CURRENT USER LOCATION PULSE */}
-          <g transform="translate(355, 90)">
-            <circle cx="0" cy="0" r="10" fill="#0284c7" fillOpacity="0.25">
-              <animate attributeName="r" values="6;14;6" dur="2s" repeatCount="indefinite" />
+          {/* User Starting Point Pulse */}
+          <g transform="translate(350, 90)">
+            <circle cx="0" cy="0" r="8" fill="#0284c7" fillOpacity="0.25">
+              <animate attributeName="r" values="5;12;5" dur="2s" repeatCount="indefinite" />
               <animate attributeName="fillOpacity" values="0.4;0.1;0.4" dur="2s" repeatCount="indefinite" />
             </circle>
-            <circle cx="0" cy="0" r="6" fill="#0284c7" stroke="#ffffff" strokeWidth="2" />
+            <circle cx="0" cy="0" r="5" fill="#0284c7" stroke="#ffffff" strokeWidth="2" />
           </g>
 
-          {/* DESTINATION PIN WITH CUSTOMER AVATAR */}
-          <g transform="translate(172, 220)">
-            {/* Pin shadow */}
-            <ellipse cx="22" cy="46" rx="12" ry="4" fill="#000000" fillOpacity="0.25" />
-            
-            {/* Custom Location Marker Pin */}
+          {/* DESTINATION PIN (Teardrop with Image Placeholder inside) */}
+          <g transform="translate(170, 222)" filter="url(#pinShadow)">
+            {/* Teardrop Pin Shape */}
             <path
               d="M 22 46 C 22 46, 0 28, 0 16 C 0 7.16 9.85 0 22 0 C 34.15 0 44 7.16 44 16 C 44 28, 22 46, 22 46 Z"
               fill="#ea580c"
             />
-            {/* Avatar container inside Pin */}
-            <circle cx="22" cy="16" r="14" fill="#ffffff" />
-            <rect x="11" y="5" width="22" height="22" rx="4" fill="#d1d5db" />
-            <path
-              d="M 14 23 L 19 17 L 23 21 L 27 15 L 30 23 Z"
-              fill="#9ca3af"
-            />
-            <circle cx="16" cy="10" r="2" fill="#9ca3af" />
+            {/* Inner White Frame */}
+            <rect x="7" y="6" width="30" height="26" rx="6" fill="#ffffff" />
+            {/* Inner Placeholder Artwork (Gradient + Mountains + Sun) */}
+            <g transform="translate(10, 9)">
+              <rect width="24" height="20" rx="4" fill="#cbd5e1" />
+              {/* Sun */}
+              <circle cx="17" cy="5" r="2" fill="#94a3b8" />
+              {/* Mountains */}
+              <path d="M 2 17 L 9 9 L 14 14 L 18 8 L 22 17 Z" fill="#94a3b8" />
+            </g>
           </g>
         </svg>
 
@@ -224,11 +246,11 @@ export function CustomerVisitMapScreen({
         <div className="map-top-bar">
           {/* Status Bar */}
           <div className="device-status map-status-bar" aria-label="Device status">
-            <span>8:59</span>
+            <span className="map-status-time">8:59 <span className="map-nav-arrow">↗</span></span>
             <img className="camera-cutout" src="/assets/camera-cutout.svg" alt="" />
             <div className="device-icons" aria-hidden="true">
-              <img src="/assets/wifi.svg" alt="" />
               <img src="/assets/signal.svg" alt="" />
+              <img src="/assets/wifi.svg" alt="" />
               <img className="battery" src="/assets/battery.svg" alt="" />
             </div>
           </div>
@@ -268,6 +290,7 @@ export function CustomerVisitMapScreen({
         {/* Floating Route Distance & Time Badge */}
         <div className="map-route-info-pill">
           <div className="route-info-item">
+            {/* Route path turn icon */}
             <svg
               width="18"
               height="18"
@@ -288,6 +311,7 @@ export function CustomerVisitMapScreen({
           </div>
 
           <div className="route-info-item">
+            {/* Clock icon */}
             <svg
               width="18"
               height="18"
@@ -306,9 +330,9 @@ export function CustomerVisitMapScreen({
         </div>
       </div>
 
-      {/* Bottom Customer Info & Check In Sheet */}
+      {/* Bottom Sheet / Customer Card Info Panel */}
       <div className="map-bottom-sheet">
-        {/* Top Row: Customer Avatar, Name, Close Button */}
+        {/* Header Row: Customer Avatar, Name, Close Button */}
         <div className="map-sheet-header-row">
           <div className="map-customer-profile-left">
             <div className="map-customer-avatar-box">
@@ -317,8 +341,8 @@ export function CustomerVisitMapScreen({
               ) : (
                 <div className="map-avatar-placeholder">
                   <svg
-                    width="32"
-                    height="32"
+                    width="36"
+                    height="36"
                     viewBox="0 0 24 24"
                     fill="none"
                     stroke="#9ca3af"
@@ -326,7 +350,7 @@ export function CustomerVisitMapScreen({
                     strokeLinecap="round"
                     strokeLinejoin="round"
                   >
-                    <rect width="18" height="18" x="3" y="3" rx="4" />
+                    <rect width="18" height="18" x="3" y="3" rx="4" fill="#e2e8f0" stroke="none" />
                     <circle cx="8.5" cy="8.5" r="1.5" />
                     <path d="m21 15-5-5L5 21" />
                   </svg>
@@ -351,7 +375,7 @@ export function CustomerVisitMapScreen({
               viewBox="0 0 24 24"
               fill="none"
               stroke="#64748b"
-              strokeWidth="2.5"
+              strokeWidth="2.6"
               strokeLinecap="round"
               strokeLinejoin="round"
             >
@@ -361,9 +385,9 @@ export function CustomerVisitMapScreen({
           </button>
         </div>
 
-        {/* Middle Section: Meta Info & Check In Button */}
+        {/* Body Row: Info List (Left) + Solid Check In Button (Right) */}
         <div className="map-sheet-body-row">
-          {/* Left Metadata list */}
+          {/* Metadata Rows */}
           <div className="map-meta-info-list">
             {/* Retailer */}
             <div className="map-meta-item">
@@ -385,7 +409,7 @@ export function CustomerVisitMapScreen({
               <span>Retailer</span>
             </div>
 
-            {/* Planned status */}
+            {/* Unplanned */}
             <div className="map-meta-item">
               <svg
                 width="16"
@@ -436,7 +460,7 @@ export function CustomerVisitMapScreen({
               <span className="map-distance-red">8.06 km</span>
             </div>
 
-            {/* Customer location */}
+            {/* Customer name / outlet pin */}
             <div className="map-meta-item">
               <svg
                 width="16"
@@ -455,7 +479,7 @@ export function CustomerVisitMapScreen({
             </div>
           </div>
 
-          {/* Right Solid Check In Button */}
+          {/* Right Check In Button */}
           <button
             type="button"
             className="map-checkin-btn"
@@ -481,12 +505,12 @@ export function CustomerVisitMapScreen({
           </button>
         </div>
 
-        {/* Bottom Action Outline Buttons: Direction & Outlet Detail */}
+        {/* Bottom Outline Buttons: Direction & Outlet Detail */}
         <div className="map-bottom-actions-row">
           <button
             type="button"
             className="map-outline-btn"
-            onClick={() => notify(`Opening navigation directions to ${customer.name}`)}
+            onClick={() => notify(`Opening directions to ${customer.name}`)}
           >
             Direction
           </button>
