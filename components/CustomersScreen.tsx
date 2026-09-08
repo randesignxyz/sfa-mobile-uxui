@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useMemo, useRef } from 'react';
+import { useState, useMemo, useRef, useEffect } from 'react';
 import { CustomerVisitMapScreen } from './CustomerVisitMapScreen';
 
 export interface ShippingAddress {
@@ -120,6 +120,11 @@ interface CustomersScreenProps {
   activeNavTab?: 'Home' | 'Visit' | 'Order' | 'Customer';
   onCustomerCall?: (customer: Customer) => void;
   onSalesCall?: (customer: Customer) => void;
+  checkedInCustomerIds?: string[];
+  activeMapCustomer?: Customer | null;
+  onCheckInCustomer?: (customer: Customer) => void;
+  onCheckOutCustomer?: (customer: Customer) => void;
+  onCloseMapCustomer?: () => void;
 }
 
 /** Placeholder image icon matching design */
@@ -432,6 +437,11 @@ export function CustomersScreen({
   activeNavTab = 'Customer',
   onCustomerCall,
   onSalesCall,
+  checkedInCustomerIds = [],
+  activeMapCustomer = null,
+  onCheckInCustomer,
+  onCheckOutCustomer,
+  onCloseMapCustomer,
 }: CustomersScreenProps) {
   const [primaryTab, setPrimaryTab] = useState<PrimaryFilterTab>('Customers');
   const [subFilter, setSubFilter] = useState<SubFilterType>('All');
@@ -439,8 +449,12 @@ export function CustomersScreen({
   const [isSearchOpen, setIsSearchOpen] = useState(false);
   const [swipedCustomerId, setSwipedCustomerId] = useState<string | null>(null);
   const [visitCustomer, setVisitCustomer] = useState<Customer | null>(null);
-  const [activeMapVisitCustomer, setActiveMapVisitCustomer] = useState<Customer | null>(null);
+  const [activeMapVisitCustomer, setActiveMapVisitCustomer] = useState<Customer | null>(activeMapCustomer);
   const [toast, setToast] = useState('');
+
+  useEffect(() => {
+    setActiveMapVisitCustomer(activeMapCustomer);
+  }, [activeMapCustomer]);
 
   function notify(msg: string) {
     setToast(msg);
@@ -476,20 +490,36 @@ export function CustomersScreen({
   }, [primaryTab, subFilter, searchQuery]);
 
   if (activeMapVisitCustomer) {
+    const isCheckedIn = checkedInCustomerIds.includes(activeMapVisitCustomer.id);
     return (
       <CustomerVisitMapScreen
         customer={activeMapVisitCustomer}
-        onBack={() => setActiveMapVisitCustomer(null)}
-        onCheckIn={(cust) => {
+        isCheckedIn={isCheckedIn}
+        onBack={() => {
           setActiveMapVisitCustomer(null);
-          if (onSelectCustomer) {
+          if (onCloseMapCustomer) onCloseMapCustomer();
+        }}
+        onCheckIn={(cust) => {
+          if (onCheckInCustomer) {
+            onCheckInCustomer(cust);
+          } else if (onSelectCustomer) {
             onSelectCustomer(cust);
           } else {
             notify(`Checked in at ${cust.name}`);
           }
         }}
+        onCheckOut={(cust) => {
+          if (onCheckOutCustomer) {
+            onCheckOutCustomer(cust);
+          } else {
+            notify(`Checked out from ${cust.name}`);
+          }
+          setActiveMapVisitCustomer(null);
+          if (onCloseMapCustomer) onCloseMapCustomer();
+        }}
         onViewOutletDetail={(cust) => {
           setActiveMapVisitCustomer(null);
+          if (onCloseMapCustomer) onCloseMapCustomer();
           if (onSelectCustomer) {
             onSelectCustomer(cust);
           }

@@ -4137,6 +4137,15 @@
   background: #9e8700;
 }
 
+.map-checkin-btn.is-checkout {
+  background: #ef4444;
+  box-shadow: 0 4px 14px rgba(239, 68, 68, 0.32);
+}
+
+.map-checkin-btn.is-checkout:hover {
+  background: #dc2626;
+}
+
 .map-checkin-btn:active {
   transform: scale(0.96);
 }

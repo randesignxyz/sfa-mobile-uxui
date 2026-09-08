@@ -5,19 +5,24 @@ import { Customer } from './CustomersScreen';
 
 interface CustomerVisitMapScreenProps {
   customer: Customer;
+  isCheckedIn?: boolean;
   onBack: () => void;
   onCheckIn: (customer: Customer) => void;
+  onCheckOut?: (customer: Customer) => void;
   onViewOutletDetail?: (customer: Customer) => void;
 }
 
 export function CustomerVisitMapScreen({
   customer,
+  isCheckedIn = false,
   onBack,
   onCheckIn,
+  onCheckOut,
   onViewOutletDetail,
 }: CustomerVisitMapScreenProps) {
   const [toast, setToast] = useState('');
   const [checkInStatus, setCheckInStatus] = useState<'idle' | 'loading' | 'success'>('idle');
+  const [checkOutStatus, setCheckOutStatus] = useState<'idle' | 'loading' | 'success'>('idle');
 
   function notify(msg: string) {
     setToast(msg);
@@ -31,6 +36,21 @@ export function CustomerVisitMapScreen({
       setTimeout(() => {
         setCheckInStatus('idle');
         onCheckIn(customer);
+      }, 1500);
+    }, 1400);
+  };
+
+  const handleCheckOutClick = () => {
+    setCheckOutStatus('loading');
+    setTimeout(() => {
+      setCheckOutStatus('success');
+      setTimeout(() => {
+        setCheckOutStatus('idle');
+        if (onCheckOut) {
+          onCheckOut(customer);
+        } else {
+          onBack();
+        }
       }, 1500);
     }, 1400);
   };
@@ -484,30 +504,57 @@ export function CustomerVisitMapScreen({
             </div>
           </div>
 
-          {/* Right Check In Button */}
-          <button
-            type="button"
-            className="map-checkin-btn"
-            onClick={handleCheckInClick}
-            aria-label={`Check in at ${customer.name}`}
-          >
-            <div className="checkin-btn-content">
-              <svg
-                width="22"
-                height="22"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="#ffffff"
-                strokeWidth="2.4"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-              >
-                <path d="M20 10c0 4.993-5.539 10.193-7.399 11.799a1 1 0 0 1-1.202 0C9.539 20.193 4 14.993 4 10a8 8 0 0 1 16 0" />
-                <circle cx="12" cy="10" r="3" />
-              </svg>
-              <span className="checkin-btn-label">Check In</span>
-            </div>
-          </button>
+          {/* Right Action Button: Check In or Check Out */}
+          {isCheckedIn ? (
+            <button
+              type="button"
+              className="map-checkin-btn is-checkout"
+              onClick={handleCheckOutClick}
+              aria-label={`Check out from ${customer.name}`}
+            >
+              <div className="checkin-btn-content">
+                <svg
+                  width="22"
+                  height="22"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="#ffffff"
+                  strokeWidth="2.4"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                >
+                  <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" />
+                  <polyline points="16 17 21 12 16 7" />
+                  <line x1="21" y1="12" x2="9" y2="12" />
+                </svg>
+                <span className="checkin-btn-label">Check Out</span>
+              </div>
+            </button>
+          ) : (
+            <button
+              type="button"
+              className="map-checkin-btn"
+              onClick={handleCheckInClick}
+              aria-label={`Check in at ${customer.name}`}
+            >
+              <div className="checkin-btn-content">
+                <svg
+                  width="22"
+                  height="22"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="#ffffff"
+                  strokeWidth="2.4"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                >
+                  <path d="M20 10c0 4.993-5.539 10.193-7.399 11.799a1 1 0 0 1-1.202 0C9.539 20.193 4 14.993 4 10a8 8 0 0 1 16 0" />
+                  <circle cx="12" cy="10" r="3" />
+                </svg>
+                <span className="checkin-btn-label">Check In</span>
+              </div>
+            </button>
+          )}
         </div>
 
         {/* Bottom Outline Buttons: Direction & Outlet Detail */}
@@ -589,6 +636,70 @@ export function CustomerVisitMapScreen({
                 </div>
                 <div className="checkin-modal-success-text">
                   <h3 className="checkin-modal-title">Check-in</h3>
+                  <h3 className="checkin-modal-title">Successful</h3>
+                </div>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+
+      {/* Check Out Loading & Success Modal Overlay */}
+      {checkOutStatus !== 'idle' && (
+        <div className="checkin-modal-backdrop" role="dialog" aria-modal="true" aria-label="Check out status">
+          <div className="checkin-modal-card">
+            {checkOutStatus === 'loading' && (
+              <div className="checkin-modal-content">
+                <div className="checkin-spinner-wrap">
+                  <svg
+                    className="checkin-spinner-svg"
+                    width="48"
+                    height="48"
+                    viewBox="0 0 50 50"
+                  >
+                    <defs>
+                      <linearGradient id="spinnerGoldGradOut" x1="0%" y1="0%" x2="100%" y2="100%">
+                        <stop offset="0%" stopColor="#b49a00" stopOpacity="1" />
+                        <stop offset="60%" stopColor="#d4af37" stopOpacity="0.7" />
+                        <stop offset="100%" stopColor="#b49a00" stopOpacity="0" />
+                      </linearGradient>
+                    </defs>
+                    <circle
+                      cx="25"
+                      cy="25"
+                      r="20"
+                      fill="none"
+                      stroke="url(#spinnerGoldGradOut)"
+                      strokeWidth="4"
+                      strokeLinecap="round"
+                      strokeDasharray="95 35"
+                    />
+                  </svg>
+                </div>
+                <h3 className="checkin-modal-title">Check Out...</h3>
+              </div>
+            )}
+
+            {checkOutStatus === 'success' && (
+              <div className="checkin-modal-content is-success">
+                <div className="checkin-success-icon-wrap">
+                  <svg
+                    className="checkin-success-svg"
+                    width="54"
+                    height="54"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="#10b981"
+                    strokeWidth="2.4"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                  >
+                    <circle cx="12" cy="12" r="10" />
+                    <path d="m9 12 2 2 4-4" />
+                  </svg>
+                </div>
+                <div className="checkin-modal-success-text">
+                  <h3 className="checkin-modal-title">Check-out</h3>
                   <h3 className="checkin-modal-title">Successful</h3>
                 </div>
               </div>

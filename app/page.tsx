@@ -219,6 +219,21 @@ export default function Home() {
   const [toast, setToast] = useState('');
   const [selectedProductForCart, setSelectedProductForCart] = useState<Product | null>(null);
   const [isLandscape, setIsLandscape] = useState(false);
+  const [checkedInCustomerIds, setCheckedInCustomerIds] = useState<string[]>([]);
+  const [activeMapCustomer, setActiveMapCustomer] = useState<Customer | null>(null);
+
+  const handleCheckInCustomer = (cust: Customer) => {
+    setCheckedInCustomerIds((prev) => (prev.includes(cust.id) ? prev : [...prev, cust.id]));
+    setSelectedCustomer(cust);
+    setActiveMapCustomer(cust);
+    setActiveNavTab('Order');
+  };
+
+  const handleCheckOutCustomer = (cust: Customer) => {
+    setCheckedInCustomerIds((prev) => prev.filter((id) => id !== cust.id));
+    setActiveMapCustomer(null);
+    notify(`Checked out from ${cust.name}`);
+  };
 
   // Touch and pointer swipe gesture handling
   const [touchStartPos, setTouchStartPos] = useState<{ x: number; y: number } | null>(null);
@@ -240,6 +255,11 @@ export default function Home() {
       if (deltaX < 0) {
         // Swipe Left: switch to Customer screen when on Order catalog
         if (activeNavTab === 'Order') {
+          if (selectedCustomer && checkedInCustomerIds.includes(selectedCustomer.id)) {
+            setActiveMapCustomer(selectedCustomer);
+          } else {
+            setActiveMapCustomer(null);
+          }
           setActiveNavTab('Customer');
           notify('Swiped to Customers');
         }
@@ -263,6 +283,11 @@ export default function Home() {
       if (deltaX < 0) {
         // Drag Left: switch to Customer screen when on Order catalog
         if (activeNavTab === 'Order') {
+          if (selectedCustomer && checkedInCustomerIds.includes(selectedCustomer.id)) {
+            setActiveMapCustomer(selectedCustomer);
+          } else {
+            setActiveMapCustomer(null);
+          }
           setActiveNavTab('Customer');
           notify('Swiped to Customers');
         }
@@ -370,19 +395,27 @@ export default function Home() {
           <CustomersScreen
             onSelectCustomer={(cust) => {
               setSelectedCustomer(cust);
+              setActiveMapCustomer(null);
               setActiveNavTab('Order');
               notify(`Viewing order for ${cust.name}`);
             }}
             onCustomerCall={(cust) => {
               setSelectedCustomer(cust);
+              setActiveMapCustomer(null);
               setActiveNavTab('Order');
               notify(`Customer Call: Direct order for ${cust.name}`);
             }}
             onSalesCall={(cust) => {
               setSelectedCustomer(cust);
+              setActiveMapCustomer(null);
               setActiveNavTab('Order');
               notify(`Sales Call: Direct order for ${cust.name}`);
             }}
+            checkedInCustomerIds={checkedInCustomerIds}
+            activeMapCustomer={activeMapCustomer}
+            onCheckInCustomer={handleCheckInCustomer}
+            onCheckOutCustomer={handleCheckOutCustomer}
+            onCloseMapCustomer={() => setActiveMapCustomer(null)}
             onNavigateTab={setActiveNavTab}
             activeNavTab={activeNavTab}
           />
@@ -399,7 +432,15 @@ export default function Home() {
                   size="icon-sm"
                   className="icon-button back-button"
                   aria-label="Back to customers"
-                  onClick={() => setActiveNavTab('Customer')}
+                  onClick={() => {
+                    if (selectedCustomer && checkedInCustomerIds.includes(selectedCustomer.id)) {
+                      setActiveMapCustomer(selectedCustomer);
+                      setActiveNavTab('Customer');
+                    } else {
+                      setActiveMapCustomer(null);
+                      setActiveNavTab('Customer');
+                    }
+                  }}
                 >
                   <img src="/assets/arrow-left.svg" alt="Back" />
                 </Button>
