@@ -3475,6 +3475,8 @@
   overflow: hidden;
   border-radius: 16px;
   user-select: none;
+  -webkit-user-select: none;
+  touch-action: pan-y;
 }
 
 .customer-card-item {
@@ -3494,6 +3496,9 @@
   min-height: 104px;
   box-sizing: border-box;
   z-index: 2;
+  user-select: none;
+  -webkit-user-select: none;
+  touch-action: pan-y;
 }
 
 .customer-card-item:hover {

@@ -141,57 +141,62 @@ function SwipeableCustomerCard({
   onCustomerCall,
   onSalesCall,
 }: SwipeableCustomerCardProps) {
-  const [touchStartX, setTouchStartX] = useState<number | null>(null);
-  const [touchStartY, setTouchStartY] = useState<number | null>(null);
-  const [mouseStartX, setMouseStartX] = useState<number | null>(null);
+  const [dragStart, setDragStart] = useState<{ x: number; y: number; time: number } | null>(null);
+
+  const handlePointerDown = (e: React.PointerEvent) => {
+    const target = e.target as HTMLElement;
+    if (target.closest('.customer-swipe-btn')) return;
+    setDragStart({ x: e.clientX, y: e.clientY, time: Date.now() });
+  };
+
+  const handlePointerUp = (e: React.PointerEvent) => {
+    if (!dragStart) return;
+    const deltaX = e.clientX - dragStart.x;
+    const deltaY = e.clientY - dragStart.y;
+
+    if (Math.abs(deltaX) > 20 && Math.abs(deltaX) > Math.abs(deltaY) * 0.5) {
+      if (deltaX < 0) {
+        onSwipeLeft();
+      } else {
+        onSwipeRight();
+      }
+    }
+    setDragStart(null);
+  };
 
   const handleTouchStart = (e: React.TouchEvent) => {
-    setTouchStartX(e.touches[0].clientX);
-    setTouchStartY(e.touches[0].clientY);
+    const target = e.target as HTMLElement;
+    if (target.closest('.customer-swipe-btn')) return;
+    setDragStart({
+      x: e.touches[0].clientX,
+      y: e.touches[0].clientY,
+      time: Date.now(),
+    });
   };
 
   const handleTouchEnd = (e: React.TouchEvent) => {
-    if (touchStartX === null || touchStartY === null) return;
-    const deltaX = e.changedTouches[0].clientX - touchStartX;
-    const deltaY = e.changedTouches[0].clientY - touchStartY;
+    if (!dragStart) return;
+    const deltaX = e.changedTouches[0].clientX - dragStart.x;
+    const deltaY = e.changedTouches[0].clientY - dragStart.y;
 
-    if (Math.abs(deltaX) > Math.abs(deltaY) && Math.abs(deltaX) > 30) {
+    if (Math.abs(deltaX) > 20 && Math.abs(deltaX) > Math.abs(deltaY) * 0.5) {
       if (deltaX < 0) {
         onSwipeLeft();
       } else {
         onSwipeRight();
       }
     }
-    setTouchStartX(null);
-    setTouchStartY(null);
-  };
-
-  const handleMouseDown = (e: React.MouseEvent) => {
-    const target = e.target as HTMLElement;
-    if (target.closest('button')) return;
-    setMouseStartX(e.clientX);
-  };
-
-  const handleMouseUp = (e: React.MouseEvent) => {
-    if (mouseStartX === null) return;
-    const deltaX = e.clientX - mouseStartX;
-    if (Math.abs(deltaX) > 30) {
-      if (deltaX < 0) {
-        onSwipeLeft();
-      } else {
-        onSwipeRight();
-      }
-    }
-    setMouseStartX(null);
+    setDragStart(null);
   };
 
   return (
     <div
       className={`customer-swipe-row-container ${isSwiped ? 'is-swiped' : ''}`}
+      onPointerDown={handlePointerDown}
+      onPointerUp={handlePointerUp}
+      onPointerCancel={() => setDragStart(null)}
       onTouchStart={handleTouchStart}
       onTouchEnd={handleTouchEnd}
-      onMouseDown={handleMouseDown}
-      onMouseUp={handleMouseUp}
     >
       <article
         className={`customer-card-item ${isSwiped ? 'is-swiped-left' : ''}`}
