@@ -840,25 +840,26 @@
 
 .home-indicator {
   position: absolute;
-  z-index: 30;
+  z-index: 35;
   right: 0;
-  bottom: 0;
+  bottom: 4px;
   left: 0;
   display: flex;
-  height: 33px;
+  height: 12px;
   align-items: center;
   justify-content: center;
-  border-top: 1px solid #e2e2e2;
-  background: rgb(255 255 255 / 94%);
-  backdrop-filter: blur(10px);
+  border: none;
+  background: transparent;
+  pointer-events: none;
 }
 
 .home-indicator span {
   display: block;
   width: 134px;
-  height: 5px;
+  height: 4.5px;
   border-radius: 100px;
   background: #000000;
+  opacity: 0.8;
 }
 
 @keyframes toast-in {
@@ -4322,13 +4323,13 @@
   bottom: 0;
   left: 0;
   right: 0;
-  height: 64px;
+  height: 66px;
   background: #ffffff;
   border-top: 1px solid #f0f0f2;
   display: flex;
   align-items: center;
   justify-content: space-around;
-  padding: 0 8px 6px;
+  padding: 0 8px 10px;
   z-index: 30;
 }
 
