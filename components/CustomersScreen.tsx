@@ -447,29 +447,6 @@ export function CustomersScreen({
     setTimeout(() => setToast(''), 2000);
   }
 
-  if (activeMapVisitCustomer) {
-    return (
-      <CustomerVisitMapScreen
-        customer={activeMapVisitCustomer}
-        onBack={() => setActiveMapVisitCustomer(null)}
-        onCheckIn={(cust) => {
-          setActiveMapVisitCustomer(null);
-          if (onSelectCustomer) {
-            onSelectCustomer(cust);
-          } else {
-            notify(`Checked in at ${cust.name}`);
-          }
-        }}
-        onViewOutletDetail={(cust) => {
-          setActiveMapVisitCustomer(null);
-          if (onSelectCustomer) {
-            onSelectCustomer(cust);
-          }
-        }}
-      />
-    );
-  }
-
   const allCount = 383;
   const directCount = 228;
   const indirectCount = 155;
@@ -497,6 +474,29 @@ export function CustomersScreen({
       return true;
     });
   }, [primaryTab, subFilter, searchQuery]);
+
+  if (activeMapVisitCustomer) {
+    return (
+      <CustomerVisitMapScreen
+        customer={activeMapVisitCustomer}
+        onBack={() => setActiveMapVisitCustomer(null)}
+        onCheckIn={(cust) => {
+          setActiveMapVisitCustomer(null);
+          if (onSelectCustomer) {
+            onSelectCustomer(cust);
+          } else {
+            notify(`Checked in at ${cust.name}`);
+          }
+        }}
+        onViewOutletDetail={(cust) => {
+          setActiveMapVisitCustomer(null);
+          if (onSelectCustomer) {
+            onSelectCustomer(cust);
+          }
+        }}
+      />
+    );
+  }
 
   return (
     <div className="customers-screen-container" role="region" aria-label="Customers list screen">
