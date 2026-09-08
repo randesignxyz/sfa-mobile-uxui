@@ -387,7 +387,7 @@ export default function Home() {
             activeNavTab={activeNavTab}
           />
         ) : (
-          <>
+          <div className="order-catalog-screen-wrap">
             {/* Main List Screen Header */}
             <header className="app-header-sales">
               <DeviceStatusBar />
@@ -548,7 +548,7 @@ export default function Home() {
                 onOrientationChange={setIsLandscape}
               />
             )}
-          </>
+          </div>
         )}
 
         {toast && (
