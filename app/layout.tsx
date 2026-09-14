@@ -1,10 +1,17 @@
 import type { Metadata } from 'next';
-import { Kantumruy_Pro } from 'next/font/google';
+import { Inter, Kantumruy_Pro } from 'next/font/google';
 
 import './globals.css';
 
+const inter = Inter({
+  subsets: ['latin'],
+  weight: ['400', '500', '600', '700'],
+  variable: '--font-inter',
+  display: 'swap',
+});
+
 const kantumruyPro = Kantumruy_Pro({
-  subsets: ['khmer', 'latin'],
+  subsets: ['khmer'],
   weight: ['400', '500', '600', '700'],
   variable: '--font-kantumruy',
   display: 'swap',
@@ -22,8 +29,8 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en" className={kantumruyPro.variable}>
-      <body className={kantumruyPro.className}>{children}</body>
+    <html lang="en" className={`${inter.variable} ${kantumruyPro.variable}`}>
+      <body className={`${inter.className} font-sans`}>{children}</body>
     </html>
   );
 }

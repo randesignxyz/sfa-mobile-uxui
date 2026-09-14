@@ -2,6 +2,7 @@
 
 import { useState, useMemo, useRef, useEffect } from 'react';
 import { CustomerVisitMapScreen } from './CustomerVisitMapScreen';
+import { formatQuantity } from '@/lib/format-number';
 
 export interface ShippingAddress {
   id: string;
@@ -24,22 +25,6 @@ export interface Customer {
 
 export const initialCustomers: Customer[] = [
   {
-    id: 'c-1',
-    khmerName: 'អា ហ្គ័ង',
-    name: 'A Houng',
-    code: 'L903030',
-    phone: '093 636332',
-    type: 'Direct',
-    address: 'In front of Khmer Soviet Friendship Hospital, Chamraeun Phal, Boeng Tumpun 1, Mean Chey, Phnom Penh',
-    shippingAddresses: [
-      {
-        id: 'addr-1',
-        address: 'In front of Khmer Soviet Friendship Hospital, Chamraeun Phal, Boeng Tumpun 1, Mean Chey, Phnom Penh',
-        isDefault: true,
-      },
-    ],
-  },
-  {
     id: 'c-2',
     khmerName: 'អា ដា',
     name: 'Ah Da',
@@ -51,6 +36,22 @@ export const initialCustomers: Customer[] = [
       {
         id: 'addr-2',
         address: '#89, St 598, Sangkat Toul Kork, Khan Tuol Kouk, Phnom Penh',
+        isDefault: true,
+      },
+    ],
+  },
+  {
+    id: 'c-1',
+    khmerName: 'បង តាប់',
+    name: 'Bong Tab',
+    code: 'L903030',
+    phone: '093 636332',
+    type: 'Direct',
+    address: 'In front of Khmer Soviet Friendship Hospital, Chamraeun Phal, Boeng Tumpun 1, Mean Chey, Phnom Penh',
+    shippingAddresses: [
+      {
+        id: 'addr-1',
+        address: 'In front of Khmer Soviet Friendship Hospital, Chamraeun Phal, Boeng Tumpun 1, Mean Chey, Phnom Penh',
         isDefault: true,
       },
     ],
@@ -125,6 +126,7 @@ interface CustomersScreenProps {
   onCheckInCustomer?: (customer: Customer) => void;
   onCheckOutCustomer?: (customer: Customer) => void;
   onCloseMapCustomer?: () => void;
+  cartItemCountsByCustomer?: Record<string, number>;
 }
 
 /** Placeholder image icon matching design */
@@ -149,6 +151,7 @@ function ImagePlaceholderIcon() {
 
 interface SwipeableCustomerCardProps {
   customer: Customer;
+  disabled?: boolean;
   isSwiped: boolean;
   onSwipeLeft: () => void;
   onSwipeRight: () => void;
@@ -156,10 +159,12 @@ interface SwipeableCustomerCardProps {
   onVisit: () => void;
   onCustomerCall?: () => void;
   onSalesCall?: () => void;
+  cartItemCount?: number;
 }
 
 function SwipeableCustomerCard({
   customer,
+  disabled = false,
   isSwiped,
   onSwipeLeft,
   onSwipeRight,
@@ -167,11 +172,13 @@ function SwipeableCustomerCard({
   onVisit,
   onCustomerCall,
   onSalesCall,
+  cartItemCount = 0,
 }: SwipeableCustomerCardProps) {
   const pointerStartRef = useRef<{ x: number; y: number; time: number } | null>(null);
   const isDraggingRef = useRef(false);
 
   const handlePointerDown = (e: React.PointerEvent) => {
+    if (disabled) return;
     const target = e.target as HTMLElement;
     if (target.closest('.customer-swipe-btn')) return;
     pointerStartRef.current = { x: e.clientX, y: e.clientY, time: Date.now() };
@@ -207,6 +214,7 @@ function SwipeableCustomerCard({
   };
 
   const handleTouchStart = (e: React.TouchEvent) => {
+    if (disabled) return;
     const target = e.target as HTMLElement;
     if (target.closest('.customer-swipe-btn')) return;
     pointerStartRef.current = {
@@ -246,6 +254,7 @@ function SwipeableCustomerCard({
   };
 
   const handleCardClick = (e: React.MouseEvent) => {
+    if (disabled) return;
     if (isDraggingRef.current) {
       e.preventDefault();
       e.stopPropagation();
@@ -260,7 +269,7 @@ function SwipeableCustomerCard({
 
   return (
     <div
-      className={`customer-swipe-row-container ${isSwiped ? 'is-swiped' : ''}`}
+      className={`customer-swipe-row-container ${isSwiped ? 'is-swiped' : ''} ${disabled ? 'is-disabled' : ''}`}
       onPointerDown={handlePointerDown}
       onPointerMove={handlePointerMove}
       onPointerUp={handlePointerUp}
@@ -273,18 +282,30 @@ function SwipeableCustomerCard({
       onTouchEnd={handleTouchEnd}
     >
       <article
-        className={`customer-card-item ${isSwiped ? 'is-swiped-left' : ''}`}
+        className={`customer-card-item ${isSwiped ? 'is-swiped-left' : ''} ${disabled ? 'is-disabled' : ''}`}
         onClick={handleCardClick}
         role="button"
-        tabIndex={0}
+        tabIndex={disabled ? -1 : 0}
         onKeyDown={(e) => {
+          if (disabled) return;
           if (e.key === 'Enter' || e.key === ' ') {
             if (isSwiped) onSwipeRight();
             else onSelect();
           }
         }}
-        aria-label={`Customer ${customer.name}, code ${customer.code}`}
+        aria-disabled={disabled}
+        aria-label={`Customer ${customer.name}, code ${customer.code}${disabled ? ', unavailable' : ''}${cartItemCount > 0 ? `, ${formatQuantity(cartItemCount)} items in cart` : ''}`}
       >
+        {cartItemCount > 0 && (
+          <div className="customer-cart-badge" aria-label={`${formatQuantity(cartItemCount)} items in cart`}>
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2">
+              <circle cx="9" cy="20" r="1" />
+              <circle cx="18" cy="20" r="1" />
+              <path d="M3 3h2l2.4 11.2a2 2 0 0 0 2 1.6h7.8a2 2 0 0 0 2-1.6L21 7H6" />
+            </svg>
+            <span>{formatQuantity(cartItemCount)}</span>
+          </div>
+        )}
         {/* Left Image Placeholder */}
         <div className="customer-avatar-box">
           {customer.image ? (
@@ -347,8 +368,62 @@ function SwipeableCustomerCard({
         </div>
       </article>
 
-      {/* Swipe Actions Panel: Visit, Customer Call, Sales Call */}
+      {/* Swipe Actions Panel: Customer Call, Sales Call, Visit */}
       <div className={`customer-swipe-action-panel ${isSwiped ? 'is-visible' : ''}`}>
+        {/* Customer Call Button */}
+        <button
+          type="button"
+          className="customer-swipe-btn is-customer-call"
+          onClick={(e) => {
+            e.stopPropagation();
+            if (onCustomerCall) onCustomerCall();
+          }}
+          aria-label={`Customer Call ${customer.name}`}
+        >
+          <svg
+            width="20"
+            height="20"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="#ffffff"
+            strokeWidth="2.2"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+          >
+            <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z" />
+            <path d="M22 2l-6 6" />
+            <path d="M16 2v6h6" />
+          </svg>
+          <span className="customer-swipe-btn-label">Customer<br />Call</span>
+        </button>
+
+        {/* Sales Call Button */}
+        <button
+          type="button"
+          className="customer-swipe-btn is-sales-call"
+          onClick={(e) => {
+            e.stopPropagation();
+            if (onSalesCall) onSalesCall();
+          }}
+          aria-label={`Sales Call ${customer.name}`}
+        >
+          <svg
+            width="20"
+            height="20"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="#ffffff"
+            strokeWidth="2.2"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+          >
+            <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z" />
+            <path d="M16 8l6-6" />
+            <path d="M16 2h6v6" />
+          </svg>
+          <span className="customer-swipe-btn-label">Sales<br />Call</span>
+        </button>
+
         {/* Visit Button */}
         <button
           type="button"
@@ -374,58 +449,6 @@ function SwipeableCustomerCard({
           </svg>
           <span className="customer-swipe-btn-label">Visit</span>
         </button>
-
-        {/* Customer Call Button */}
-        <button
-          type="button"
-          className="customer-swipe-btn is-customer-call"
-          onClick={(e) => {
-            e.stopPropagation();
-            if (onCustomerCall) onCustomerCall();
-          }}
-          aria-label={`Customer Call ${customer.name}`}
-        >
-          <svg
-            width="20"
-            height="20"
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="#ffffff"
-            strokeWidth="2.2"
-            strokeLinecap="round"
-            strokeLinejoin="round"
-          >
-            <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z" />
-          </svg>
-          <span className="customer-swipe-btn-label">Customer<br />Call</span>
-        </button>
-
-        {/* Sales Call Button */}
-        <button
-          type="button"
-          className="customer-swipe-btn is-sales-call"
-          onClick={(e) => {
-            e.stopPropagation();
-            if (onSalesCall) onSalesCall();
-          }}
-          aria-label={`Sales Call ${customer.name}`}
-        >
-          <svg
-            width="20"
-            height="20"
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="#ffffff"
-            strokeWidth="2.2"
-            strokeLinecap="round"
-            strokeLinejoin="round"
-          >
-            <path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2" />
-            <rect width="8" height="4" x="8" y="2" rx="1" ry="1" />
-            <path d="m9 14 2 2 4-4" />
-          </svg>
-          <span className="customer-swipe-btn-label">Sales<br />Call</span>
-        </button>
       </div>
     </div>
   );
@@ -442,6 +465,7 @@ export function CustomersScreen({
   onCheckInCustomer,
   onCheckOutCustomer,
   onCloseMapCustomer,
+  cartItemCountsByCustomer = {},
 }: CustomersScreenProps) {
   const [primaryTab, setPrimaryTab] = useState<PrimaryFilterTab>('Customers');
   const [subFilter, setSubFilter] = useState<SubFilterType>('All');
@@ -704,6 +728,7 @@ export function CustomersScreen({
             <SwipeableCustomerCard
               key={cust.id}
               customer={cust}
+              disabled={cust.id !== 'c-1' && cust.id !== 'c-2'}
               isSwiped={swipedCustomerId === cust.id}
               onSwipeLeft={() => setSwipedCustomerId(cust.id)}
               onSwipeRight={() => setSwipedCustomerId(null)}
@@ -736,6 +761,7 @@ export function CustomersScreen({
                   notify(`Sales Call: ${cust.name}`);
                 }
               }}
+              cartItemCount={cartItemCountsByCustomer[cust.id] ?? 0}
             />
           ))
         )}
@@ -771,11 +797,9 @@ export function CustomersScreen({
         {/* Home */}
         <button
           type="button"
-          className={`bottom-nav-item ${activeNavTab === 'Home' ? 'is-active' : ''}`}
-          onClick={() => {
-            if (onNavigateTab) onNavigateTab('Home');
-            else notify('Home tab');
-          }}
+          className="bottom-nav-item"
+          disabled
+          aria-label="Home unavailable"
         >
           <svg
             width="22"
@@ -796,11 +820,9 @@ export function CustomersScreen({
         {/* Visit */}
         <button
           type="button"
-          className={`bottom-nav-item ${activeNavTab === 'Visit' ? 'is-active' : ''}`}
-          onClick={() => {
-            if (onNavigateTab) onNavigateTab('Visit');
-            else notify('Visit tab');
-          }}
+          className="bottom-nav-item"
+          disabled
+          aria-label="Visit unavailable"
         >
           <svg
             width="22"
@@ -821,11 +843,9 @@ export function CustomersScreen({
         {/* Order */}
         <button
           type="button"
-          className={`bottom-nav-item ${activeNavTab === 'Order' ? 'is-active' : ''}`}
-          onClick={() => {
-            if (onNavigateTab) onNavigateTab('Order');
-            else notify('Order tab');
-          }}
+          className="bottom-nav-item"
+          disabled
+          aria-label="Order unavailable"
         >
           <svg
             width="22"

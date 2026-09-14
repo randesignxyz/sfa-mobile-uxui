@@ -2,6 +2,9 @@
 
 import { useMemo, useState } from 'react';
 import { Button } from '@/components/ui/button';
+import { TransactionTypeTag } from '@/components/ui/transaction-type-tag';
+import { formatMoney, formatQuantity } from '@/lib/format-number';
+import { getAutomaticPromotions } from '@/lib/automatic-promotions';
 
 export type PriceTier = 'STD' | 'TDD' | 'PROMO' | 'FOC';
 
@@ -53,20 +56,22 @@ export type ProductItem = {
   count: number;
   price: number;
   unit: string;
+  alternateUnit?: string;
   image: string;
   imageFit?: 'contain' | 'cover';
 };
 
 interface AddToCartScreenProps {
   product: ProductItem;
+  customerId?: string;
   initialTiers?: Record<PriceTier, number>;
-  initialRemark?: string;
+  initialAlternateQuantity?: number;
   onBack: () => void;
   onAddToCart: (
     product: ProductItem,
     totalQuantity: number,
     tierBreakdown?: Record<PriceTier, number>,
-    remark?: string,
+    alternateQuantity?: number,
   ) => void;
 }
 
@@ -91,32 +96,30 @@ function PlaceholderIcon({ className }: { className?: string }) {
 
 export function AddToCartScreen({
   product,
+  customerId,
   initialTiers,
-  initialRemark,
+  initialAlternateQuantity = 0,
   onBack,
   onAddToCart,
 }: AddToCartScreenProps) {
+  const isEditingCartItem = initialTiers
+    ? Object.values(initialTiers).some((quantity) => quantity > 0) || initialAlternateQuantity > 0
+    : product.count > 0;
+
   // Store quantities for each tier based on initial product state
   const [tierQuantities, setTierQuantities] = useState<Record<PriceTier, number>>(() => {
-    if (initialTiers) return initialTiers;
-    if (product.id === 1) {
-      return { STD: 80, TDD: 20, PROMO: 0, FOC: 0 };
-    }
+    if (initialTiers) return { STD: initialTiers.STD, TDD: 0, PROMO: 0, FOC: 0 };
     if (product.count > 0) {
       return { STD: product.count, TDD: 0, PROMO: 0, FOC: 0 };
     }
     return { STD: 0, TDD: 0, PROMO: 0, FOC: 0 };
   });
 
-  const [activeTier, setActiveTier] = useState<PriceTier>(() => {
-    if (initialTiers?.TDD && initialTiers.TDD > 0) return 'TDD';
-    if (product.id === 1) return 'TDD';
-    return 'STD';
-  });
-  const [tierDropdownOpen, setTierDropdownOpen] = useState(false);
+  const activeTier: PriceTier = 'STD';
   const [showKeyboard, setShowKeyboard] = useState(false);
-  const [remark, setRemark] = useState(() => initialRemark ?? (product.id === 1 ? 'ផលិតផលលើកទឹកចិត្តការតាំងលក់ផលិតផល' : ''));
-  const [isRemarkFocused, setIsRemarkFocused] = useState(false);
+  const [activeInputField, setActiveInputField] = useState<'main' | 'alternate'>('main');
+  const [alternateQuantity, setAlternateQuantity] = useState(initialAlternateQuantity);
+  const [alternateInputValue, setAlternateInputValue] = useState(initialAlternateQuantity.toString());
 
   const currentTierConfig = TIERS[activeTier];
   const activeUnitPrice = product.price * currentTierConfig.rateMultiplier;
@@ -144,20 +147,18 @@ export function AddToCartScreen({
 
   // Combined grand total
   const grandTotal = useMemo(() => {
-    return summaryBreakdown.reduce((sum, item) => sum + item.total, 0);
-  }, [summaryBreakdown]);
+    return summaryBreakdown.reduce((sum, item) => sum + item.total, 0) +
+      alternateQuantity * product.price;
+  }, [summaryBreakdown, alternateQuantity, product.price]);
 
   const totalQuantity = useMemo(() => {
-    return summaryBreakdown.reduce((sum, item) => sum + item.qty, 0);
-  }, [summaryBreakdown]);
-
-  // When switching active tier
-  const handleSelectTier = (tier: PriceTier) => {
-    setActiveTier(tier);
-    setTierDropdownOpen(false);
-    const qty = tierQuantities[tier] || 0;
-    setInputValue(qty.toString());
-  };
+    return summaryBreakdown.reduce((sum, item) => sum + item.qty, 0) + alternateQuantity;
+  }, [summaryBreakdown, alternateQuantity]);
+  const automaticPromotions = getAutomaticPromotions(
+    customerId,
+    product.name,
+    tierQuantities.STD || 0,
+  );
 
   const updateActiveTierQuantity = (qty: number) => {
     setTierQuantities((prev) => ({
@@ -167,31 +168,60 @@ export function AddToCartScreen({
   };
 
   const handleKeyPress = (key: string) => {
-    if (key === 'backspace') {
-      if (inputValue.length <= 1 || inputValue === '0') {
+    if (activeInputField === 'alternate') {
+      if (key === 'backspace') {
+        if (alternateInputValue.length <= 1 || alternateInputValue === '0') {
+          setAlternateInputValue('0');
+          setAlternateQuantity(0);
+        } else {
+          const nextVal = alternateInputValue.slice(0, -1);
+          const parsed = parseInt(nextVal, 10) || 0;
+          setAlternateInputValue(nextVal);
+          setAlternateQuantity(parsed);
+        }
+      } else if (key === 'clear') {
+        setAlternateInputValue('0');
+        setAlternateQuantity(0);
+      } else {
+        let nextVal = alternateInputValue;
+        if (alternateInputValue === '0' || alternateInputValue === '') {
+          nextVal = key;
+        } else {
+          if (alternateInputValue.length < 5) {
+            nextVal = alternateInputValue + key;
+          }
+        }
+        const parsed = parseInt(nextVal, 10) || 0;
+        setAlternateInputValue(nextVal);
+        setAlternateQuantity(parsed);
+      }
+    } else {
+      if (key === 'backspace') {
+        if (inputValue.length <= 1 || inputValue === '0') {
+          setInputValue('0');
+          updateActiveTierQuantity(0);
+        } else {
+          const nextVal = inputValue.slice(0, -1);
+          const parsed = parseInt(nextVal, 10) || 0;
+          setInputValue(nextVal);
+          updateActiveTierQuantity(parsed);
+        }
+      } else if (key === 'clear') {
         setInputValue('0');
         updateActiveTierQuantity(0);
       } else {
-        const nextVal = inputValue.slice(0, -1);
+        let nextVal = inputValue;
+        if (inputValue === '0' || inputValue === '') {
+          nextVal = key;
+        } else {
+          if (inputValue.length < 5) {
+            nextVal = inputValue + key;
+          }
+        }
         const parsed = parseInt(nextVal, 10) || 0;
         setInputValue(nextVal);
         updateActiveTierQuantity(parsed);
       }
-    } else if (key === 'clear') {
-      setInputValue('0');
-      updateActiveTierQuantity(0);
-    } else {
-      let nextVal = inputValue;
-      if (inputValue === '0' || inputValue === '') {
-        nextVal = key;
-      } else {
-        if (inputValue.length < 5) {
-          nextVal = inputValue + key;
-        }
-      }
-      const parsed = parseInt(nextVal, 10) || 0;
-      setInputValue(nextVal);
-      updateActiveTierQuantity(parsed);
     }
   };
 
@@ -218,25 +248,31 @@ export function AddToCartScreen({
     }
   };
 
-  const handleConfirm = () => {
-    onAddToCart(product, totalQuantity, tierQuantities, remark);
+  const handleAlternateInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const val = e.target.value.replace(/[^0-9]/g, '');
+    if (val === '') {
+      setAlternateInputValue('');
+      setAlternateQuantity(0);
+      return;
+    }
+    const parsed = parseInt(val, 10);
+    setAlternateInputValue(parsed.toString());
+    setAlternateQuantity(parsed);
   };
 
-  const remarkSuggestions = [
-    'ផលិតផលលើកទឹកចិត្តការតាំងលក់ផលិតផល',
-    'ប្រូម៉ូសិនពិសេសប្រចាំខែ',
-    'ទិញ ៤ កេះ ថែម ១ កេះ',
-    'គំរូសាកល្បង',
-  ];
-
-  const handleRemoveTier = (tierToRemove: PriceTier) => {
-    setTierQuantities((prev) => ({
-      ...prev,
-      [tierToRemove]: 0,
-    }));
-    if (activeTier === tierToRemove) {
-      setInputValue('0');
+  const handleAlternateBlur = () => {
+    if (alternateInputValue === '' || isNaN(parseInt(alternateInputValue, 10))) {
+      setAlternateInputValue('0');
+      setAlternateQuantity(0);
+    } else {
+      const parsed = parseInt(alternateInputValue, 10);
+      setAlternateInputValue(parsed.toString());
+      setAlternateQuantity(parsed);
     }
+  };
+
+  const handleConfirm = () => {
+    onAddToCart(product, totalQuantity, tierQuantities, alternateQuantity);
   };
 
   return (
@@ -248,16 +284,10 @@ export function AddToCartScreen({
         if (
           showKeyboard &&
           !target.closest('.numeric-keyboard-panel') &&
-          !target.closest('.quantity-input-field')
+          !target.closest('.quantity-input-field') &&
+          !target.closest('.cart-screen-footer')
         ) {
           setShowKeyboard(false);
-        }
-        if (
-          isRemarkFocused &&
-          !target.closest('.remark-input-container') &&
-          !target.closest('.remark-suggestions-container')
-        ) {
-          setIsRemarkFocused(false);
         }
       }}
     >
@@ -310,63 +340,11 @@ export function AddToCartScreen({
 
             <div className="price-tier-inline-row">
               <span className="product-summary-price">
-                ${activeUnitPrice.toFixed(3)}
+                ${formatMoney(activeUnitPrice)}
               </span>
 
               <div className="tier-dropdown-wrap">
-                <button
-                  type="button"
-                  className="std-badge-btn"
-                  style={{
-                    backgroundColor: currentTierConfig.badgeBg,
-                    color: currentTierConfig.badgeColor,
-                  }}
-                  onClick={() => setTierDropdownOpen((prev) => !prev)}
-                  aria-expanded={tierDropdownOpen}
-                >
-                  <span>{activeTier}</span>
-                  <svg
-                    className="std-chevron"
-                    style={{ color: currentTierConfig.badgeColor }}
-                    width="12"
-                    height="12"
-                    viewBox="0 0 24 24"
-                    fill="none"
-                    stroke="currentColor"
-                    strokeWidth="2.5"
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                  >
-                    <polyline points="6 9 12 15 18 9" />
-                  </svg>
-                </button>
-                {tierDropdownOpen && (
-                  <div className="tier-dropdown-menu">
-                    {(['STD', 'TDD'] as PriceTier[]).map((tierKey) => {
-                      const tier = TIERS[tierKey];
-                      return (
-                        <button
-                          key={tierKey}
-                          type="button"
-                          className={`tier-option ${
-                            activeTier === tierKey ? 'is-selected' : ''
-                          }`}
-                          onClick={() => handleSelectTier(tierKey)}
-                        >
-                          <span
-                            className="tier-badge-indicator"
-                            style={{
-                              backgroundColor: tier.badgeBg,
-                              color: tier.badgeColor,
-                            }}
-                          >
-                            {tier.code}
-                          </span>
-                        </button>
-                      );
-                    })}
-                  </div>
-                )}
+                <TransactionTypeTag code={activeTier} />
               </div>
             </div>
           </div>
@@ -387,13 +365,13 @@ export function AddToCartScreen({
               <div className="unit-details">
                 <span className="unit-name">{product.unit || 'Case'}</span>
                 <span className="unit-price-rate">
-                  ${activeUnitPrice.toFixed(3)}/ {product.unit || 'Case'}
+                  ${formatMoney(activeUnitPrice)}/ {product.unit || 'Case'}
                 </span>
               </div>
             </div>
 
             <div className="quantity-row-right">
-              <div className="unit-row-price">${activeUnitPrice.toFixed(3)}</div>
+              <div className="unit-row-price">${formatMoney(activeUnitPrice)}</div>
               <div className="quantity-input-wrap">
                 <input
                   type="text"
@@ -401,11 +379,17 @@ export function AddToCartScreen({
                   pattern="[0-9]*"
                   value={inputValue}
                   onChange={handleQuantityInputChange}
-                  onFocus={() => setShowKeyboard(true)}
-                  onClick={() => setShowKeyboard(true)}
+                  onFocus={() => {
+                    setActiveInputField('main');
+                    setShowKeyboard(true);
+                  }}
+                  onClick={() => {
+                    setActiveInputField('main');
+                    setShowKeyboard(true);
+                  }}
                   onBlur={handleBlur}
                   className={`quantity-input-field ${
-                    showKeyboard ? 'is-focused' : ''
+                    showKeyboard && activeInputField === 'main' ? 'is-focused' : ''
                   }`}
                   placeholder="0"
                   aria-label="Enter quantity"
@@ -413,188 +397,132 @@ export function AddToCartScreen({
               </div>
             </div>
           </div>
+
+          {product.alternateUnit && (
+            <div className="quantity-row alternate-unit-row">
+              <div className="quantity-row-left">
+                <div className="unit-icon-box">
+                  <PlaceholderIcon className="unit-placeholder-icon" />
+                </div>
+                <div className="unit-details">
+                  <span className="unit-name">{product.alternateUnit}</span>
+                  <span className="unit-price-rate">
+                    ${formatMoney(product.price)}/ {product.alternateUnit}
+                  </span>
+                </div>
+              </div>
+              <div className="quantity-row-right">
+                <div className="unit-row-price">${formatMoney(product.price)}</div>
+                <div className="quantity-input-wrap">
+                  <input
+                    type="text"
+                    inputMode="numeric"
+                    pattern="[0-9]*"
+                    value={alternateInputValue}
+                    onChange={handleAlternateInputChange}
+                    onFocus={() => {
+                      setActiveInputField('alternate');
+                      setShowKeyboard(true);
+                    }}
+                    onClick={() => {
+                      setActiveInputField('alternate');
+                      setShowKeyboard(true);
+                    }}
+                    onBlur={handleAlternateBlur}
+                    className={`quantity-input-field ${
+                      showKeyboard && activeInputField === 'alternate' ? 'is-focused' : ''
+                    }`}
+                    placeholder="0"
+                    aria-label={`Enter ${product.alternateUnit} quantity`}
+                  />
+                </div>
+              </div>
+            </div>
+          )}
         </div>
+      </div>
 
-        {/* Multi-Tier Summary Breakdown Section */}
-        {summaryBreakdown.length > 0 && (
-          <div className="order-summary-section">
-            <h3 className="summary-section-heading">Summary</h3>
+      {/* Sticky Bottom Total & CTA */}
+      <div className={`cart-screen-footer ${showKeyboard ? 'is-keyboard-open' : ''}`}>
+        {totalQuantity > 0 && !showKeyboard ? (
+          <section className="footer-order-summary" aria-label="Order summary">
+            <div className="footer-summary-heading">
+              <span>Order Summary</span>
+            </div>
+            <div className="footer-summary-divider" />
 
-            <div className="summary-breakdown-list">
-              {summaryBreakdown.map((item) => (
-                <div
-                  key={item.tier}
-                  className={`summary-breakdown-row ${
-                    activeTier === item.tier ? 'is-active-tier' : ''
-                  }`}
-                  onClick={() => handleSelectTier(item.tier)}
-                  title="Click to edit quantity for this tier"
-                >
-                  <div className="summary-row-left">
-                    <span className="summary-row-qty">
-                      x{item.qty} {product.unit || 'Case'}
-                    </span>
-                    <span
-                      className="summary-tier-badge"
-                      style={{
-                        backgroundColor: item.config.badgeBg,
-                        color: item.config.badgeColor,
-                      }}
-                    >
-                      {item.tier}
+            <div className="footer-summary-lines-list">
+              {summaryBreakdown.map((item) => {
+                const isFree = item.tier === 'FOC' || item.tier === 'TDD';
+                return (
+                  <div className={`footer-summary-line ${isFree ? 'is-promo-line' : ''}`} key={item.tier}>
+                    <div className="footer-summary-details-group">
+                      <span className={`footer-summary-qty ${isFree ? 'is-promo-qty' : ''}`}>
+                        {isFree ? '+' : ''}{formatQuantity(item.qty)} x {product.unit || 'Case'}
+                      </span>
+                      <TransactionTypeTag code={item.tier} />
+                    </div>
+                    <span className={`footer-summary-price ${item.total === 0 ? 'is-zero-price' : ''}`}>
+                      ${formatMoney(item.total)}
                     </span>
                   </div>
-
-                  <div className="summary-row-right">
-                    <span className="summary-row-price">
-                      ${item.total.toFixed(3)}
+                );
+              })}
+              {product.alternateUnit && alternateQuantity > 0 && (
+                <div className="footer-summary-line">
+                  <div className="footer-summary-details-group">
+                    <span className="footer-summary-qty">
+                      {formatQuantity(alternateQuantity)} x {product.alternateUnit}
                     </span>
-                    <button
-                      type="button"
-                      className="remove-tier-btn"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        handleRemoveTier(item.tier);
-                      }}
-                      aria-label={`Remove ${item.tier} tier`}
-                      title={`Remove ${item.tier} tier`}
-                    >
-                      <svg
-                        width="12"
-                        height="12"
-                        viewBox="0 0 24 24"
-                        fill="none"
-                        stroke="currentColor"
-                        strokeWidth="2.8"
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                      >
-                        <line x1="18" y1="6" x2="6" y2="18" />
-                        <line x1="6" y1="6" x2="18" y2="18" />
-                      </svg>
-                    </button>
+                    <TransactionTypeTag code="STD" />
                   </div>
+                  <span className="footer-summary-price">
+                    ${formatMoney(alternateQuantity * product.price)}
+                  </span>
+                </div>
+              )}
+              {automaticPromotions.map((promotion) => (
+                <div className="footer-summary-line is-promo-line" key={promotion.type}>
+                  <div className="footer-summary-details-group">
+                    <span className="footer-summary-qty is-promo-qty">
+                      +{formatQuantity(promotion.quantity)} x {product.unit || 'Case'}
+                    </span>
+                    <TransactionTypeTag code={promotion.type} />
+                  </div>
+                  <span className="footer-summary-price is-zero-price">$0.0000</span>
                 </div>
               ))}
             </div>
 
-            {/* Floating Label Remark Box (44px Height Single Line) */}
-            <div
-              className="remark-input-container-44"
-              onClick={() => {
-                setShowKeyboard(false);
-                setIsRemarkFocused(true);
-              }}
-              role="button"
-              tabIndex={0}
-              onKeyDown={(e) => {
-                if (e.key === 'Enter' || e.key === ' ') {
-                  setShowKeyboard(false);
-                  setIsRemarkFocused(true);
-                }
-              }}
-            >
-              <label className="remark-floating-label">Remark *</label>
-              <div className="remark-input-inner">
-                <input
-                  type="text"
-                  value={remark}
-                  readOnly
-                  className="remark-single-input"
-                  placeholder="Tap to select or enter remark..."
-                />
-              </div>
+            <div className="cart-total-bar is-in-summary">
+              <span className="cart-total-label">Total</span>
+              <span className="cart-total-amount">${formatMoney(grandTotal)}</span>
             </div>
+          </section>
+        ) : (
+          <div className="cart-total-bar">
+            <span className="cart-total-label">Total</span>
+            <span className="cart-total-amount">${formatMoney(grandTotal)}</span>
           </div>
         )}
-      </div>
-
-      {/* Floating Bottom Sheet for Remark Suggestions */}
-      {isRemarkFocused && (
-        <div className="remark-sheet-backdrop" onClick={() => setIsRemarkFocused(false)}>
-          <div
-            className="remark-sheet-panel"
-            onClick={(e) => e.stopPropagation()}
-            role="dialog"
-            aria-label="Remark Suggestions"
-          >
-            <div className="sheet-drag-handle" />
-
-            <div className="remark-sheet-header">
-              <div className="sheet-title-wrap">
-                <svg
-                  width="14"
-                  height="14"
-                  viewBox="0 0 24 24"
-                  fill="currentColor"
-                  className="sparkle-icon"
-                >
-                  <path d="M12 2l2.4 7.2L22 12l-7.6 2.8L12 22l-2.4-7.2L2 12l7.6-2.8z" />
-                </svg>
-                <span className="sheet-title">Select Remark</span>
-              </div>
-            </div>
-
-            {/* Editable input inside sheet */}
-            <div className="sheet-input-box">
-              <input
-                type="text"
-                value={remark}
-                onChange={(e) => setRemark(e.target.value)}
-                autoFocus
-                placeholder="Type custom remark..."
-                className="sheet-edit-input"
-              />
-              {remark.length > 0 && (
-                <button
-                  type="button"
-                  className="sheet-input-clear"
-                  onClick={() => setRemark('')}
-                  aria-label="Clear"
-                >
-                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
-                    <line x1="18" y1="6" x2="6" y2="18" />
-                    <line x1="6" y1="6" x2="18" y2="18" />
-                  </svg>
-                </button>
-              )}
-            </div>
-
-            <div className="sheet-suggestions-list">
-              <span className="sheet-suggestions-label">Quick Suggestions:</span>
-              <div className="sheet-chips-wrap">
-                {remarkSuggestions.map((sug) => (
-                  <button
-                    key={sug}
-                    type="button"
-                    className={`sheet-chip ${remark === sug ? 'is-selected' : ''}`}
-                    onClick={() => {
-                      setRemark(sug);
-                      setIsRemarkFocused(false); // Auto close after selection!
-                    }}
-                  >
-                    {sug}
-                  </button>
-                ))}
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* Sticky Bottom Total & CTA */}
-      <div className="cart-screen-footer">
-        <div className="cart-total-bar">
-          <span className="cart-total-label">Total</span>
-          <span className="cart-total-amount">${grandTotal.toFixed(3)}</span>
-        </div>
 
         <button
           type="button"
-          className="add-to-cart-btn is-active"
+          className={
+            isEditingCartItem && totalQuantity === 0
+              ? 'add-to-cart-btn is-remove'
+              : totalQuantity > 0
+                ? 'add-to-cart-btn is-active'
+                : 'add-to-cart-btn is-disabled'
+          }
+          disabled={!isEditingCartItem && totalQuantity === 0}
           onClick={handleConfirm}
         >
-          Update Cart
+          {isEditingCartItem
+            ? totalQuantity === 0
+              ? 'Remove from Cart'
+              : 'Update Cart'
+            : 'Add to Cart'}
         </button>
       </div>
 
@@ -605,19 +533,6 @@ export function AddToCartScreen({
           role="region"
           aria-label="Numeric Keyboard"
         >
-          <div className="keyboard-toolbar">
-            <span className="keyboard-title">
-              Quantity for {activeTier} ({product.unit || 'Case'})
-            </span>
-            <button
-              type="button"
-              className="keyboard-done-btn"
-              onClick={() => setShowKeyboard(false)}
-            >
-              Done
-            </button>
-          </div>
-
           <div className="keyboard-grid">
             {['1', '2', '3', '4', '5', '6', '7', '8', '9'].map((num, i) => {
               const subs = ['', 'ABC', 'DEF', 'GHI', 'JKL', 'MNO', 'PQRS', 'TUV', 'WXYZ'];

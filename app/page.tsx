@@ -1,11 +1,12 @@
 'use client';
 
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 
 import { Button } from '@/components/ui/button';
 import { AddToCartScreen, ProductItem, PriceTier } from '@/components/AddToCartScreen';
-import { CartScreen, CartLineItem } from '@/components/CartScreen';
+import { CartScreen, CartLineItem, LinePromotionsMap, ComboGroup } from '@/components/CartScreen';
 import { CustomersScreen, Customer, initialCustomers } from '@/components/CustomersScreen';
+import { formatMoney, formatQuantity } from '@/lib/format-number';
 
 type Category = 'All' | 'Vital' | 'Mee Chiet' | 'OM';
 type PrimaryTab = 'Record Stock' | 'Sales' | 'Issue';
@@ -15,87 +16,113 @@ export type Product = ProductItem;
 
 const initialProducts: Product[] = [
   {
-    id: 1,
+    id: 6,
     category: 'Vital',
     name: 'Vital 250 mL',
     code: 'FG000012',
     pack: 'x40 bottles',
     count: 0,
-    price: 4.0,
+    price: 4.5,
     unit: 'Case',
-    image: '/assets/vital-250.png',
+    image: '/assets/vital-250.jpg',
+    imageFit: 'contain',
   },
   {
-    id: 2,
+    id: 7,
     category: 'Vital',
     name: 'Vital 350 mL',
     code: 'FG000013',
     pack: 'x24 bottles',
     count: 0,
-    price: 2.75,
+    price: 3,
     unit: 'Case',
     image: '/assets/vital-350.jpg',
+    imageFit: 'contain',
   },
   {
-    id: 3,
+    id: 8,
     category: 'Vital',
     name: 'Vital 350 mL, OEM (AM)',
     code: 'FG000001',
     pack: 'x24 bottles',
     count: 0,
-    price: 2.75,
+    price: 3,
     unit: 'Case',
     image: '/assets/vital-350.jpg',
+    imageFit: 'contain',
   },
   {
-    id: 4,
+    id: 9,
     category: 'Vital',
     name: 'Vital 500 mL',
     code: 'FG000002',
     pack: 'x24 bottles',
     count: 0,
-    price: 3.0,
+    price: 3.3,
     unit: 'Case',
     image: '/assets/vital-500.jpg',
-    imageFit: 'cover',
+    imageFit: 'contain',
   },
   {
-    id: 5,
+    id: 10,
     category: 'Vital',
-    name: 'Vital drinking water 1500ML',
+    name: 'Vital 1.5 L',
     code: 'FG000010',
     pack: 'x12 bottles',
     count: 0,
     price: 4.5,
     unit: 'Case',
-    image: '/assets/vital-1500.png',
+    image: '/assets/vital-1500.jpg',
+    imageFit: 'contain',
   },
-  {
-    id: 6,
-    category: 'Mee Chiet',
-    name: 'Mee Chiet minced pork instant noodle 65g',
-    code: 'FG000020',
-    pack: 'x24 packs',
-    count: 0,
-    price: 5.5,
-    unit: 'Case',
-    image: '/assets/mee-chiet-pork.jpg',
-    imageFit: 'cover',
-  },
-  {
-    id: 7,
-    category: 'OM',
-    name: 'OM Drinking Water 500ML',
-    code: 'FG000030',
-    pack: 'x24 bottles',
-    count: 0,
-    price: 3.2,
-    unit: 'Case',
-    image: '/assets/vital-500.jpg',
-  },
+  { id: 11, category: 'Mee Chiet', name: 'MC Pack - Minced Pork', code: 'OMM0008', pack: 'x24 packs', count: 0, price: 4.5, unit: 'Case', image: '/assets/mc-pack-minced-pork.jpg', imageFit: 'contain' },
+  { id: 12, category: 'Mee Chiet', name: 'MC Pack - Chicken Egg', code: 'OMM0015', pack: 'x24 packs', count: 0, price: 4.5, unit: 'Case', image: '/assets/mc-pack-chicken-egg.jpg', imageFit: 'contain' },
+  { id: 13, category: 'Mee Chiet', name: 'MC Pack - Beef Stew Original', code: 'OMM0011', pack: 'x24 packs', count: 0, price: 4.5, unit: 'Case', image: '/assets/mc-pack-beef-stew.jpg', imageFit: 'contain' },
+  { id: 14, category: 'Mee Chiet', name: 'MC Pack - Shrimp Sour Soup', code: 'OMM0004', pack: 'x24 packs', count: 0, price: 4.5, unit: 'Case', image: '/assets/mc-pack-shrimp-sour-soup.jpg', imageFit: 'contain' },
+  { id: 15, category: 'Mee Chiet', name: 'MC Pack - Machu Kroeung Beef', code: 'OMM0005', pack: 'x24 packs', count: 0, price: 4.5, unit: 'Case', image: '' },
+  { id: 16, category: 'Mee Chiet', name: 'MC Pack - Spicy Seafood', code: 'OMM0019', pack: 'x24 packs', count: 0, price: 5, unit: 'Case', image: '/assets/mc-pack-spicy-seafood.jpg', imageFit: 'contain' },
+  { id: 17, category: 'Mee Chiet', name: 'MC Pack - Salted Egg', code: 'OMM0035', pack: 'x24 packs', count: 0, price: 5, unit: 'Case', image: '' },
+  { id: 18, category: 'Mee Chiet', name: 'MC Pack - Lobster Sour Creamy Soup', code: 'OMM0036', pack: 'x24 packs', count: 0, price: 4.5, unit: 'Case', image: '' },
+  { id: 19, category: 'Mee Chiet', name: 'MC Cup - Minced Pork', code: 'OMM0029', pack: 'x24 cups', count: 0, price: 9, unit: 'Case', image: '/assets/mc-cup-minced-pork.jpg', imageFit: 'contain' },
+  { id: 20, category: 'Mee Chiet', name: 'MC Cup - Beef Stew Original', code: 'OMM0030', pack: 'x24 cups', count: 0, price: 9, unit: 'Case', image: '/assets/mc-cup-beef-stew.jpg', imageFit: 'contain' },
+  { id: 37, category: 'Mee Chiet', name: 'MC Cup - Shrimp Sour Soup', code: 'OMM0028', pack: 'x24 cups', count: 0, price: 9, unit: 'Case', image: '/assets/mc-cup-shrimp-sour-soup.jpg', imageFit: 'contain' },
+  { id: 38, category: 'Mee Chiet', name: 'MC Cup - Spicy Seafood', code: 'OMM0031', pack: 'x24 cups', count: 0, price: 9, unit: 'Case', image: '/assets/mc-cup-spicy-seafood.jpg', imageFit: 'contain' },
+  { id: 39, category: 'Mee Chiet', name: 'MC Sa-Sei Egg Noodle 500g', code: 'OMM0040', pack: 'x20 packs', count: 0, price: 6, unit: 'Case', alternateUnit: 'Pcs', image: '/assets/mc-sa-sei-egg-noodle-500g.jpg', imageFit: 'contain' },
+  { id: 23, category: 'OM', name: 'OM - Oyster Sauce 250g', code: 'FD02-OM010001', pack: 'x24 bottles', count: 0, price: 12.5, unit: 'Case', alternateUnit: 'Pcs', image: '/assets/om-oyster-sauce-250g.jpg', imageFit: 'contain' },
+  { id: 24, category: 'OM', name: 'OM - Oyster Sauce 600g', code: 'FD02-OM010002', pack: 'x24 bottles', count: 0, price: 27.5, unit: 'Case', alternateUnit: 'Pcs', image: '/assets/om-oyster-sauce-600g.jpg', imageFit: 'contain' },
+  { id: 25, category: 'OM', name: 'OM - Oyster Sauce 6Kg', code: 'FD02-OM010016', pack: '', count: 0, price: 7, unit: 'Case', image: '' },
+  { id: 26, category: 'OM', name: 'OM - Chili Sauce 250g', code: 'FD02-OM010003', pack: 'x24 bottles', count: 0, price: 12.5, unit: 'Case', image: '/assets/om-chili-sauce-250g.jpg', imageFit: 'contain' },
+  { id: 27, category: 'OM', name: 'OM - Chili Sauce 500g', code: 'FD02-OM010004', pack: 'x24 bottles', count: 0, price: 22.5, unit: 'Case', image: '/assets/om-chili-sauce-500g.jpg', imageFit: 'contain' },
+  { id: 28, category: 'OM', name: 'OM - Soy Sauce 200 mL', code: 'FD02-OM010005', pack: '', count: 0, price: 10, unit: 'Case', image: '' },
+  { id: 29, category: 'OM', name: 'OM - Soy Sauce 500 mL', code: 'FD02-OM010006', pack: '', count: 0, price: 18, unit: 'Case', image: '' },
+  { id: 30, category: 'OM', name: 'OM - Fish Sauce 200 mL', code: 'FD02-OM010007', pack: '', count: 0, price: 15, unit: 'Case', image: '' },
+  { id: 31, category: 'OM', name: 'OM - Pork Powder 165g', code: 'FD02-OM010008', pack: 'x72 packs', count: 0, price: 14.5, unit: 'Case', alternateUnit: 'Pcs', image: '/assets/om-pork-powder-165g.jpg', imageFit: 'contain' },
+  { id: 32, category: 'OM', name: 'OM - Pork Powder 400g', code: 'FD02-OM010009', pack: 'x36 packs', count: 0, price: 18.5, unit: 'Case', alternateUnit: 'Pcs', image: '/assets/om-pork-powder-400g.jpg', imageFit: 'contain' },
+  { id: 33, category: 'OM', name: 'OM - Chicken Powder 165g', code: 'FD02-OM010010', pack: 'x72 packs', count: 0, price: 14.5, unit: 'Case', alternateUnit: 'Pcs', image: '/assets/om-chicken-powder-165g.jpg', imageFit: 'contain' },
+  { id: 34, category: 'OM', name: 'OM - Chicken Powder 400g', code: 'FD02-OM010011', pack: 'x36 packs', count: 0, price: 18.5, unit: 'Case', alternateUnit: 'Pcs', image: '/assets/om-chicken-powder-400g.jpg', imageFit: 'contain' },
+  { id: 35, category: 'OM', name: 'OM - Vegetable Powder 165g', code: 'FD02-OM010012', pack: 'x72 packs', count: 0, price: 14.5, unit: 'Case', alternateUnit: 'Pcs', image: '/assets/om-vegetable-powder-165g.jpg', imageFit: 'contain' },
+  { id: 36, category: 'OM', name: 'OM - Vegetable Powder 400g', code: 'FD02-OM010013', pack: 'x36 packs', count: 0, price: 18.5, unit: 'Case', alternateUnit: 'Pcs', image: '/assets/om-vegetable-powder-400g.jpg', imageFit: 'contain' },
 ];
 
 const initialCartLines: CartLineItem[] = [];
+
+type CustomerCartState = {
+  counts: Record<number, number>;
+  productTiers: Record<number, Record<PriceTier, number>>;
+  cartLines: CartLineItem[];
+  linePromotions?: LinePromotionsMap;
+  comboGroups?: ComboGroup[];
+  selectedSchemeId?: string;
+  appliedGratisIds?: string[];
+  appliedGratisQuantities?: Record<string, number>;
+};
+
+const createEmptyCounts = () => Object.fromEntries(initialProducts.map((product) => [product.id, 0]));
+
+const createEmptyProductTiers = () =>
+  Object.fromEntries(
+    Object.entries(initialProductTiers).map(([productId, tiers]) => [productId, { ...tiers }]),
+  );
 
 const initialProductTiers: Record<number, Record<PriceTier, number>> = {
   1: { STD: 0, TDD: 0, PROMO: 0, FOC: 0 },
@@ -143,7 +170,7 @@ function ProductCard({
           onClick();
         }
       }}
-      aria-label={`Select ${product.name}, price $${product.price.toFixed(3)} per ${product.unit}`}
+      aria-label={`Select ${product.name}, price $${formatMoney(product.price)} per ${product.unit}`}
     >
       <div className="card-thumb-box">
         {product.image ? (
@@ -163,7 +190,7 @@ function ProductCard({
         <h2 className="card-product-name">{product.name}</h2>
         <span className="card-product-sku">{product.code}</span>
         <span className="card-product-price">
-          ${product.price.toFixed(3)}/ {product.unit}
+          ${formatMoney(product.price)}/ {product.unit}
         </span>
       </div>
 
@@ -171,9 +198,9 @@ function ProductCard({
         {count > 0 ? (
           <div
             className="card-qty-badge"
-            aria-label={`${count} items in cart`}
+            aria-label={`${formatQuantity(count)} items in cart`}
           >
-            {count}
+            {formatQuantity(count)}
           </div>
         ) : (
           <button
@@ -210,21 +237,74 @@ export default function Home() {
   const [primaryTab, setPrimaryTab] = useState<PrimaryTab>('Sales');
   const [orderView, setOrderView] = useState<OrderView>('Sale Order');
   const [category, setCategory] = useState<Category>('All');
-  const [counts, setCounts] = useState<Record<number, number>>(() =>
-    Object.fromEntries(initialProducts.map((p) => [p.id, p.count])),
-  );
+  const [counts, setCounts] = useState<Record<number, number>>(createEmptyCounts);
   const [productTiers, setProductTiers] = useState<Record<number, Record<PriceTier, number>>>(initialProductTiers);
   const [cartLines, setCartLines] = useState<CartLineItem[]>(initialCartLines);
+  const [linePromotions, setLinePromotions] = useState<LinePromotionsMap>({});
+  const [comboGroups, setComboGroups] = useState<ComboGroup[]>([]);
+  const [selectedSchemeId, setSelectedSchemeId] = useState<string>('whole-sales');
+  const [appliedGratisIds, setAppliedGratisIds] = useState<string[]>([]);
+  const [appliedGratisQuantities, setAppliedGratisQuantities] = useState<Record<string, number>>({});
   const [isCartOpen, setIsCartOpen] = useState(false);
   const [toast, setToast] = useState('');
   const [selectedProductForCart, setSelectedProductForCart] = useState<Product | null>(null);
+  const [wasEditingFromCart, setWasEditingFromCart] = useState(false);
   const [isLandscape, setIsLandscape] = useState(false);
   const [checkedInCustomerIds, setCheckedInCustomerIds] = useState<string[]>([]);
   const [activeMapCustomer, setActiveMapCustomer] = useState<Customer | null>(null);
+  const [shouldSlideToOrder, setShouldSlideToOrder] = useState(false);
+  const [loadingCall, setLoadingCall] = useState<{
+    customer: Customer;
+    type: 'Customer Call' | 'Sales Call';
+  } | null>(null);
+  const [showLeaveCartConfirm, setShowLeaveCartConfirm] = useState(false);
+  const [customerCarts, setCustomerCarts] = useState<Record<string, CustomerCartState>>({});
+  const callNavigationTimerRef = useRef<number | null>(null);
+
+  useEffect(() => {
+    return () => {
+      if (callNavigationTimerRef.current) {
+        window.clearTimeout(callNavigationTimerRef.current);
+      }
+    };
+  }, []);
+
+  const activateCustomerCart = (cust: Customer) => {
+    const savedCart = customerCarts[cust.id];
+    setSelectedCustomer(cust);
+    setCounts(savedCart?.counts ?? createEmptyCounts());
+    setProductTiers(savedCart?.productTiers ?? createEmptyProductTiers());
+    setCartLines(savedCart?.cartLines ?? []);
+    setLinePromotions(savedCart?.linePromotions ?? {});
+    setComboGroups(savedCart?.comboGroups ?? []);
+    setSelectedSchemeId(savedCart?.selectedSchemeId ?? 'whole-sales');
+    setAppliedGratisIds(savedCart?.appliedGratisIds ?? []);
+    setAppliedGratisQuantities(savedCart?.appliedGratisQuantities ?? {});
+    setSelectedProductForCart(null);
+    setWasEditingFromCart(false);
+    setIsCartOpen(false);
+  };
+
+  const openCallOrder = (cust: Customer, callType: 'Customer Call' | 'Sales Call') => {
+    activateCustomerCart(cust);
+    setActiveMapCustomer(null);
+    setLoadingCall({ customer: cust, type: callType });
+
+    if (callNavigationTimerRef.current) {
+      window.clearTimeout(callNavigationTimerRef.current);
+    }
+
+    callNavigationTimerRef.current = window.setTimeout(() => {
+      setShouldSlideToOrder(true);
+      setLoadingCall(null);
+      setActiveNavTab('Order');
+      callNavigationTimerRef.current = null;
+    }, 900);
+  };
 
   const handleCheckInCustomer = (cust: Customer) => {
     setCheckedInCustomerIds((prev) => (prev.includes(cust.id) ? prev : [...prev, cust.id]));
-    setSelectedCustomer(cust);
+    activateCustomerCart(cust);
     setActiveMapCustomer(cust);
     setActiveNavTab('Order');
   };
@@ -309,6 +389,36 @@ export default function Home() {
     return Object.values(counts).reduce((sum, val) => sum + val, 0);
   }, [counts]);
 
+  const cartItemCountsByCustomer = useMemo(
+    () =>
+      Object.fromEntries(
+        Object.entries(customerCarts).map(([customerId, cart]) => [
+          customerId,
+          Object.values(cart.counts).reduce((sum, itemCount) => sum + itemCount, 0),
+        ]),
+      ),
+    [customerCarts],
+  );
+
+  function returnToCustomers() {
+    if (selectedCustomer && checkedInCustomerIds.includes(selectedCustomer.id)) {
+      setActiveMapCustomer(selectedCustomer);
+    } else {
+      setActiveMapCustomer(null);
+    }
+    setShouldSlideToOrder(false);
+    setActiveNavTab('Customer');
+  }
+
+  function handleBackToCustomers() {
+    if (totalCartItems > 0) {
+      setShowLeaveCartConfirm(true);
+      return;
+    }
+
+    returnToCustomers();
+  }
+
   function notify(message: string) {
     setToast(message);
     window.setTimeout(() => setToast(''), 2000);
@@ -322,64 +432,155 @@ export default function Home() {
     product: Product,
     quantity: number,
     tierBreakdown?: Record<PriceTier, number>,
+    alternateQuantity = 0,
   ) {
-    setCounts((current) => ({
-      ...current,
-      [product.id]: quantity,
-    }));
+    const nextCounts = { ...counts, [product.id]: quantity };
+    const nextProductTiers = tierBreakdown
+      ? { ...productTiers, [product.id]: tierBreakdown }
+      : productTiers;
+    let nextCartLines = cartLines;
 
     if (tierBreakdown) {
-      setProductTiers((prev) => ({
-        ...prev,
-        [product.id]: tierBreakdown,
-      }));
+      const withoutProduct = cartLines.filter((item) => item.productId !== product.id);
+      const newLines: CartLineItem[] = [];
 
-      setCartLines((prev) => {
-        const withoutProduct = prev.filter((item) => item.productId !== product.id);
-        const newLines: CartLineItem[] = [];
-
-        Object.entries(tierBreakdown).forEach(([tierKey, qty]) => {
-          if (qty > 0) {
-            const tier = tierKey as PriceTier;
-            const rate = tier === 'STD' ? 1.0 : tier === 'PROMO' ? 0.75 : 0.0;
-            const unitPrice = product.price * rate;
-            newLines.push({
-              id: `${product.id}-${tierKey.toLowerCase()}`,
-              productId: product.id,
-              productName: product.name,
-              productCode: product.code,
-              productImage: product.image || '',
-              imageFit: product.imageFit,
-              unit: product.unit || 'Case',
-              tier,
-              quantity: qty,
-              unitPrice,
-              totalPrice: unitPrice * qty,
-            });
-          }
-        });
-
-        return [...withoutProduct, ...newLines];
+      Object.entries(tierBreakdown).forEach(([tierKey, qty]) => {
+        if (qty > 0) {
+          const tier = tierKey as PriceTier;
+          const rate = tier === 'STD' ? 1.0 : tier === 'PROMO' ? 0.75 : 0.0;
+          const unitPrice = product.price * rate;
+          newLines.push({
+            id: `${product.id}-${tierKey.toLowerCase()}`,
+            productId: product.id,
+            productName: product.name,
+            productCode: product.code,
+            productImage: product.image || '',
+            imageFit: product.imageFit,
+            unit: product.unit || 'Case',
+            tier,
+            quantity: qty,
+            unitPrice,
+            totalPrice: unitPrice * qty,
+          });
+        }
       });
+      nextCartLines = [...withoutProduct, ...newLines];
+      if (product.alternateUnit && alternateQuantity > 0) {
+        nextCartLines.push({
+          id: `${product.id}-std-${product.alternateUnit.toLowerCase()}`,
+          productId: product.id,
+          productName: product.name,
+          productCode: product.code,
+          productImage: product.image || '',
+          imageFit: product.imageFit,
+          unit: product.alternateUnit,
+          tier: 'STD',
+          quantity: alternateQuantity,
+          unitPrice: product.price,
+          totalPrice: product.price * alternateQuantity,
+        });
+      }
     }
+
+    setCounts(nextCounts);
+    setProductTiers(nextProductTiers);
+    setCartLines(nextCartLines);
+    setCustomerCarts((current) => ({
+      ...current,
+      [selectedCustomer.id]: {
+        counts: nextCounts,
+        productTiers: nextProductTiers,
+        cartLines: nextCartLines,
+        linePromotions: current[selectedCustomer.id]?.linePromotions ?? linePromotions,
+        selectedSchemeId: current[selectedCustomer.id]?.selectedSchemeId ?? selectedSchemeId,
+        appliedGratisIds: current[selectedCustomer.id]?.appliedGratisIds ?? appliedGratisIds,
+        appliedGratisQuantities: current[selectedCustomer.id]?.appliedGratisQuantities ?? appliedGratisQuantities,
+      },
+    }));
 
     setSelectedProductForCart(null);
-    setIsCartOpen(false);
-
-    const breakdownStr =
-      tierBreakdown && quantity > 0
-        ? Object.entries(tierBreakdown)
-            .filter(([, q]) => q > 0)
-            .map(([t, q]) => `${q} ${t}`)
-            .join(', ')
-        : `${quantity} Cases`;
-
-    if (quantity === 0) {
-      notify(`Removed ${product.name} from cart`);
+    if (wasEditingFromCart) {
+      setWasEditingFromCart(false);
+      setIsCartOpen(true);
     } else {
-      notify(`Updated cart: ${product.name} (${breakdownStr})`);
+      setIsCartOpen(false);
     }
   }
+
+  const handleUpdateLinePromotions = (next: LinePromotionsMap) => {
+    setLinePromotions(next);
+    setCustomerCarts((current) => ({
+      ...current,
+      [selectedCustomer.id]: {
+        ...(current[selectedCustomer.id] || {
+          counts,
+          productTiers,
+          cartLines,
+        }),
+        linePromotions: next,
+      },
+    }));
+  };
+
+  const handleUpdateComboGroups = (groups: ComboGroup[]) => {
+    setComboGroups(groups);
+    setCustomerCarts((current) => ({
+      ...current,
+      [selectedCustomer.id]: {
+        ...(current[selectedCustomer.id] || {
+          counts,
+          productTiers,
+          cartLines,
+        }),
+        comboGroups: groups,
+      },
+    }));
+  };
+
+  const handleUpdateSelectedSchemeId = (schemeId: string) => {
+    setSelectedSchemeId(schemeId);
+    setCustomerCarts((current) => ({
+      ...current,
+      [selectedCustomer.id]: {
+        ...(current[selectedCustomer.id] || {
+          counts,
+          productTiers,
+          cartLines,
+        }),
+        selectedSchemeId: schemeId,
+      },
+    }));
+  };
+
+  const handleUpdateAppliedGratisIds = (ids: string[]) => {
+    setAppliedGratisIds(ids);
+    setCustomerCarts((current) => ({
+      ...current,
+      [selectedCustomer.id]: {
+        ...(current[selectedCustomer.id] || {
+          counts,
+          productTiers,
+          cartLines,
+        }),
+        appliedGratisIds: ids,
+      },
+    }));
+  };
+
+  const handleUpdateAppliedGratisQuantities = (quantities: Record<string, number>) => {
+    setAppliedGratisQuantities(quantities);
+    setCustomerCarts((current) => ({
+      ...current,
+      [selectedCustomer.id]: {
+        ...(current[selectedCustomer.id] || {
+          counts,
+          productTiers,
+          cartLines,
+        }),
+        appliedGratisQuantities: quantities,
+      },
+    }));
+  };
 
   return (
     <main className={`prototype-stage ${isLandscape ? 'is-landscape-stage' : ''}`}>
@@ -395,23 +596,13 @@ export default function Home() {
         {activeNavTab === 'Customer' ? (
           <CustomersScreen
             onSelectCustomer={(cust) => {
-              setSelectedCustomer(cust);
+              activateCustomerCart(cust);
               setActiveMapCustomer(null);
+              setShouldSlideToOrder(false);
               setActiveNavTab('Order');
-              notify(`Viewing order for ${cust.name}`);
             }}
-            onCustomerCall={(cust) => {
-              setSelectedCustomer(cust);
-              setActiveMapCustomer(null);
-              setActiveNavTab('Order');
-              notify(`Customer Call: Direct order for ${cust.name}`);
-            }}
-            onSalesCall={(cust) => {
-              setSelectedCustomer(cust);
-              setActiveMapCustomer(null);
-              setActiveNavTab('Order');
-              notify(`Sales Call: Direct order for ${cust.name}`);
-            }}
+            onCustomerCall={(cust) => openCallOrder(cust, 'Customer Call')}
+            onSalesCall={(cust) => openCallOrder(cust, 'Sales Call')}
             checkedInCustomerIds={checkedInCustomerIds}
             activeMapCustomer={activeMapCustomer}
             onCheckInCustomer={handleCheckInCustomer}
@@ -419,9 +610,12 @@ export default function Home() {
             onCloseMapCustomer={() => setActiveMapCustomer(null)}
             onNavigateTab={setActiveNavTab}
             activeNavTab={activeNavTab}
+            cartItemCountsByCustomer={cartItemCountsByCustomer}
           />
         ) : (
-          <div className="order-catalog-screen-wrap">
+          <div
+            className={`order-catalog-screen-wrap ${shouldSlideToOrder ? 'slide-left-in' : ''}`}
+          >
             {/* Main List Screen Header */}
             <header className="app-header-sales">
               <DeviceStatusBar />
@@ -433,15 +627,7 @@ export default function Home() {
                   size="icon-sm"
                   className="icon-button back-button"
                   aria-label="Back to customers"
-                  onClick={() => {
-                    if (selectedCustomer && checkedInCustomerIds.includes(selectedCustomer.id)) {
-                      setActiveMapCustomer(selectedCustomer);
-                      setActiveNavTab('Customer');
-                    } else {
-                      setActiveMapCustomer(null);
-                      setActiveNavTab('Customer');
-                    }
-                  }}
+                  onClick={handleBackToCustomers}
                 >
                   <img src="/assets/arrow-left.svg" alt="Back" />
                 </Button>
@@ -561,7 +747,7 @@ export default function Home() {
                   onClick={() => setIsCartOpen(true)}
                 >
                   <span className="cart-banner-text">View your cart</span>
-                  <div className="cart-banner-count">{totalCartItems}</div>
+                  <div className="cart-banner-count">{formatQuantity(totalCartItems)}</div>
                 </button>
               </div>
             )}
@@ -570,8 +756,22 @@ export default function Home() {
             {selectedProductForCart && (
               <AddToCartScreen
                 product={selectedProductForCart}
+                customerId={selectedCustomer.id}
                 initialTiers={productTiers[selectedProductForCart.id]}
-                onBack={() => setSelectedProductForCart(null)}
+                initialAlternateQuantity={
+                  cartLines.find(
+                    (line) =>
+                      line.productId === selectedProductForCart.id &&
+                      line.unit === selectedProductForCart.alternateUnit,
+                  )?.quantity ?? 0
+                }
+                onBack={() => {
+                  setSelectedProductForCart(null);
+                  if (wasEditingFromCart) {
+                    setWasEditingFromCart(false);
+                    setIsCartOpen(true);
+                  }
+                }}
                 onAddToCart={handleConfirmAddToCart}
               />
             )}
@@ -580,16 +780,116 @@ export default function Home() {
             {isCartOpen && (
               <CartScreen
                 cartLines={cartLines}
+                customerId={selectedCustomer.id}
+                customerName={selectedCustomer.name}
+                isGratisEligible={selectedCustomer.id === 'c-1'}
+                initialLinePromotions={linePromotions}
+                onUpdateLinePromotions={handleUpdateLinePromotions}
+                initialComboGroups={comboGroups}
+                onUpdateComboGroups={handleUpdateComboGroups}
+                initialSelectedSchemeId={selectedSchemeId}
+                onUpdateSelectedSchemeId={handleUpdateSelectedSchemeId}
+                initialAppliedGratisIds={appliedGratisIds}
+                onUpdateAppliedGratisIds={handleUpdateAppliedGratisIds}
+                initialAppliedGratisQuantities={appliedGratisQuantities}
+                onUpdateAppliedGratisQuantities={handleUpdateAppliedGratisQuantities}
                 onBack={() => {
                   setIsLandscape(false);
                   setIsCartOpen(false);
                 }}
+                onEditProduct={(productId) => {
+                  const product = initialProducts.find((p) => p.id === productId);
+                  if (product) {
+                    setWasEditingFromCart(true);
+                    setIsCartOpen(false);
+                    setSelectedProductForCart(product);
+                  }
+                }}
                 onReviewOrder={() => notify('Proceeding to Review Order')}
-                onSelectPromotion={() => notify('1 active promotion selected')}
                 onManualPromotion={() => notify('Manual Promotion opened')}
                 onOrientationChange={setIsLandscape}
               />
             )}
+          </div>
+        )}
+
+        {loadingCall && (
+          <div
+            className="checkin-modal-backdrop"
+            role="dialog"
+            aria-modal="true"
+            aria-label={`Preparing ${loadingCall.type} for ${loadingCall.customer.name}`}
+            aria-busy="true"
+          >
+            <div className="checkin-modal-card">
+              <div className="checkin-modal-content">
+                <div className="checkin-spinner-wrap" aria-hidden="true">
+                  <svg className="checkin-spinner-svg" width="48" height="48" viewBox="0 0 50 50">
+                    <defs>
+                      <linearGradient id="callSpinnerGoldGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+                        <stop offset="0%" stopColor="#b49a00" stopOpacity="1" />
+                        <stop offset="60%" stopColor="#d4af37" stopOpacity="0.7" />
+                        <stop offset="100%" stopColor="#b49a00" stopOpacity="0" />
+                      </linearGradient>
+                    </defs>
+                    <circle
+                      cx="25"
+                      cy="25"
+                      r="20"
+                      fill="none"
+                      stroke="url(#callSpinnerGoldGrad)"
+                      strokeWidth="4"
+                      strokeLinecap="round"
+                      strokeDasharray="95 35"
+                    />
+                  </svg>
+                </div>
+                <h3 className="checkin-modal-title">Preparing {loadingCall.type}...</h3>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {showLeaveCartConfirm && (
+          <div
+            className="checkin-modal-backdrop"
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="leave-cart-title"
+            aria-describedby="leave-cart-description"
+          >
+            <div className="checkout-confirm-card">
+              <div className="leave-cart-icon-wrap" aria-hidden="true">
+                <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                  <path d="M3 3h2l2.4 11.2a2 2 0 0 0 2 1.6h7.8a2 2 0 0 0 2-1.6L21 7H6" />
+                  <circle cx="10" cy="20" r="1" />
+                  <circle cx="18" cy="20" r="1" />
+                </svg>
+              </div>
+              <h2 id="leave-cart-title" className="checkout-confirm-title">Leave this customer?</h2>
+              <p id="leave-cart-description" className="checkout-confirm-desc">
+                You have {formatQuantity(totalCartItems)} {totalCartItems === 1 ? 'product' : 'products'} in the cart.
+              </p>
+              <div className="checkout-confirm-actions">
+                <button
+                  type="button"
+                  className="checkout-cancel-btn"
+                  onClick={() => setShowLeaveCartConfirm(false)}
+                >
+                  Stay
+                </button>
+                <button
+                  type="button"
+                  className="leave-cart-confirm-btn"
+                  onClick={() => {
+                    setShowLeaveCartConfirm(false);
+                    returnToCustomers();
+                  }}
+                >
+                  Leave
+                </button>
+              </div>
+            </div>
           </div>
         )}
 

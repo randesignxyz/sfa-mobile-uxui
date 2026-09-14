@@ -2,6 +2,7 @@
 
 import { useMemo, useState, useEffect } from 'react';
 import { CartLineItem, PromoTypeCode } from './CartScreen';
+import { formatMoney, formatQuantity } from '@/lib/format-number';
 
 interface OrderInvoicePreviewProps {
   cartLines: CartLineItem[];
@@ -43,7 +44,6 @@ export function OrderInvoicePreview({
     if (onOrientationChange) {
       onOrientationChange(nextState);
     }
-    notify(nextState ? 'Switched to Landscape View' : 'Switched to Portrait View');
   }
 
   // Cleanup orientation when closing
@@ -167,57 +167,45 @@ export function OrderInvoicePreview({
         </div>
 
         <div className="invoice-header-actions">
-          {/* Rotate Screen Icon Button (Compact 34x34) */}
+          {/* Rotate Screen Icon Button (Phone Vertical / Horizontal) */}
           <button
             type="button"
             className={`invoice-action-icon-btn rotate-screen-icon-btn ${isLandscape ? 'is-active-landscape' : ''}`}
             onClick={handleToggleOrientation}
-            aria-label={isLandscape ? 'Rotate to Portrait' : 'Rotate to Landscape'}
-            title={isLandscape ? 'Switch to Portrait' : 'Rotate Screen to Landscape'}
+            aria-label={isLandscape ? 'Switch to Portrait (Vertical)' : 'Switch to Landscape (Horizontal)'}
+            title={isLandscape ? 'Switch to Portrait (Vertical)' : 'Switch to Landscape (Horizontal)'}
           >
-            <svg
-              width="18"
-              height="18"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="2.2"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              className={`rotate-icon-svg ${isLandscape ? 'rotated' : ''}`}
-            >
-              {/* Screen rotation icon */}
-              <path d="M21 12a9 9 0 0 0-9-9 9.75 9.75 0 0 0-6.74 2.74L3 8" />
-              <path d="M3 3v5h5" />
-              <path d="M3 12a9 9 0 0 0 9 9 9.75 9.75 0 0 0 6.74-2.74L21 16" />
-              <path d="M21 21v-5h-5" />
-            </svg>
-          </button>
-
-          {/* Share Button */}
-          <button
-            type="button"
-            className="invoice-action-icon-btn"
-            onClick={() => notify('Share dialog opened')}
-            aria-label="Share Order"
-            title="Share"
-          >
-            <svg
-              width="18"
-              height="18"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="#b49a00"
-              strokeWidth="2.2"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-            >
-              <circle cx="18" cy="5" r="3" />
-              <circle cx="6" cy="12" r="3" />
-              <circle cx="18" cy="19" r="3" />
-              <line x1="8.59" y1="13.51" x2="15.42" y2="17.49" />
-              <line x1="15.41" y1="6.51" x2="8.59" y2="10.49" />
-            </svg>
+            {isLandscape ? (
+              <svg
+                width="18"
+                height="18"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                aria-hidden="true"
+              >
+                <rect width="13" height="20" x="5.5" y="2" rx="2.5" />
+                <path d="M12 18.5h.01" />
+              </svg>
+            ) : (
+              <svg
+                width="18"
+                height="18"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                aria-hidden="true"
+              >
+                <rect width="20" height="13" x="2" y="5.5" rx="2.5" />
+                <path d="M5.5 12h.01" />
+              </svg>
+            )}
           </button>
         </div>
       </header>
@@ -254,7 +242,9 @@ export function OrderInvoicePreview({
               </div>
               <div className="meta-info-row">
                 <span className="meta-row-label">Total Items:</span>
-                <span className="meta-row-value">{totalQuantity} Cases ({tableRows.length} lines)</span>
+                <span className="meta-row-value">
+                  {formatQuantity(totalQuantity)} ({formatQuantity(tableRows.length)} lines)
+                </span>
               </div>
             </div>
           </div>
@@ -284,28 +274,28 @@ export function OrderInvoicePreview({
                       </div>
                     </td>
                     <td className="so-td-qty">
-                      <span className="so-qty-num">{row.qty}</span>{' '}
+                      <span className="so-qty-num">{formatQuantity(row.qty)}</span>{' '}
                       <span className="so-qty-unit">{row.unit}</span>
                     </td>
                     <td className="so-td-price">
                       {row.isPromo ? (
-                        <span className="so-price-free">$0.000</span>
+                        <span className="so-price-free">$0.0000</span>
                       ) : (
-                        `$${row.unitPrice.toFixed(3)}`
+                        `$${formatMoney(row.unitPrice)}`
                       )}
                     </td>
                     <td className="so-td-discount">
                       {row.discount > 0 ? (
-                        <span className="so-disc-active">-${row.discount.toFixed(3)}</span>
+                        <span className="so-disc-active">-${formatMoney(row.discount)}</span>
                       ) : (
-                        <span className="so-disc-zero">$0.000</span>
+                        <span className="so-disc-zero">$0.0000</span>
                       )}
                     </td>
                     <td className="so-td-total">
                       {row.isPromo ? (
-                        <span className="so-total-free">$0.000</span>
+                        <span className="so-total-free">$0.0000</span>
                       ) : (
-                        `$${row.totalPrice.toFixed(3)}`
+                        `$${formatMoney(row.totalPrice)}`
                       )}
                     </td>
                   </tr>
@@ -319,22 +309,22 @@ export function OrderInvoicePreview({
             <div className={`sale-order-summary-box ${isLandscape ? 'is-landscape-summary' : ''}`}>
               <div className="so-summary-row">
                 <span className="so-sum-label">Subtotal</span>
-                <span className="so-sum-val">${subtotal.toFixed(3)}</span>
+                <span className="so-sum-val">${formatMoney(subtotal)}</span>
               </div>
               <div className="so-summary-row">
                 <span className="so-sum-label">VAT</span>
-                <span className="so-sum-val">$0.000</span>
-              </div>
-              <div className="so-summary-row">
-                <span className="so-sum-label">Total Discount</span>
-                <span className="so-sum-val text-emerald-600">-${discount.toFixed(3)}</span>
+                <span className="so-sum-val">$0.0000</span>
               </div>
 
               <div className="so-summary-divider" />
 
               <div className="so-grand-total-row">
-                <span className="so-grand-label">Grand Total</span>
-                <span className="so-grand-val">${total.toFixed(3)}</span>
+                <span className="so-grand-label">Total</span>
+                <span className="so-grand-val">${formatMoney(total)}</span>
+              </div>
+              <div className="so-grand-total-row so-khr-row">
+                <span className="so-grand-label">Total (KHR)</span>
+                <span className="so-grand-val">៛{formatQuantity(Math.round(total * 4000))}</span>
               </div>
             </div>
           </div>
