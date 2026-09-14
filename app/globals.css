@@ -5123,6 +5123,50 @@ button.transaction-type-tag {
   transform: scale(0.97);
 }
 
+.leave-cart-discard-btn {
+  flex: 1;
+  height: 42px;
+  border-radius: 14px;
+  background: #fee2e2;
+  border: 1px solid #fecaca;
+  font-size: 14px;
+  font-weight: 600;
+  color: #dc2626;
+  cursor: pointer;
+  transition: background 120ms ease, transform 100ms ease;
+}
+
+.leave-cart-discard-btn:hover {
+  background: #fecaca;
+}
+
+.leave-cart-discard-btn:active {
+  transform: scale(0.97);
+}
+
+.leave-cart-save-btn {
+  flex: 1;
+  height: 42px;
+  border: none;
+  border-radius: 14px;
+  background: #b49a00;
+  color: #ffffff;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  box-shadow: 0 4px 12px rgba(180, 154, 0, 0.3);
+  transition: background 120ms ease, transform 100ms ease;
+}
+
+.leave-cart-save-btn:hover {
+  background: #9e8700;
+}
+
+.leave-cart-save-btn:active {
+  transform: scale(0.97);
+}
+
+
 @keyframes scaleUpModal {
   from {
     transform: scale(0.92);

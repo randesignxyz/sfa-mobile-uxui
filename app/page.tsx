@@ -419,6 +419,44 @@ export default function Home() {
     returnToCustomers();
   }
 
+  function handleDiscardOrder() {
+    setShowLeaveCartConfirm(false);
+    setCounts(createEmptyCounts());
+    setProductTiers(createEmptyProductTiers());
+    setCartLines([]);
+    setLinePromotions({});
+    setComboGroups([]);
+    setSelectedSchemeId('whole-sales');
+    setAppliedGratisIds([]);
+    setAppliedGratisQuantities({});
+    setCustomerCarts((current) => {
+      const next = { ...current };
+      delete next[selectedCustomer.id];
+      return next;
+    });
+    returnToCustomers();
+    notify('Order discarded');
+  }
+
+  function handleSaveDraftOrder() {
+    setShowLeaveCartConfirm(false);
+    setCustomerCarts((current) => ({
+      ...current,
+      [selectedCustomer.id]: {
+        counts,
+        productTiers,
+        cartLines,
+        linePromotions,
+        comboGroups,
+        selectedSchemeId,
+        appliedGratisIds,
+        appliedGratisQuantities,
+      },
+    }));
+    returnToCustomers();
+    notify('Draft saved');
+  }
+
   function notify(message: string) {
     setToast(message);
     window.setTimeout(() => setToast(''), 2000);
@@ -857,36 +895,34 @@ export default function Home() {
             aria-modal="true"
             aria-labelledby="leave-cart-title"
             aria-describedby="leave-cart-description"
+            onClick={() => setShowLeaveCartConfirm(false)}
           >
-            <div className="checkout-confirm-card">
+            <div className="checkout-confirm-card" onClick={(e) => e.stopPropagation()}>
               <div className="leave-cart-icon-wrap" aria-hidden="true">
-                <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                  <path d="M3 3h2l2.4 11.2a2 2 0 0 0 2 1.6h7.8a2 2 0 0 0 2-1.6L21 7H6" />
-                  <circle cx="10" cy="20" r="1" />
-                  <circle cx="18" cy="20" r="1" />
+                <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z" />
+                  <polyline points="17 21 17 13 7 13 7 21" />
+                  <polyline points="7 3 7 8 15 8" />
                 </svg>
               </div>
-              <h2 id="leave-cart-title" className="checkout-confirm-title">Leave this customer?</h2>
+              <h2 id="leave-cart-title" className="checkout-confirm-title">Save Order as Draft?</h2>
               <p id="leave-cart-description" className="checkout-confirm-desc">
-                You have {formatQuantity(totalCartItems)} {totalCartItems === 1 ? 'product' : 'products'} in the cart.
+                You have <span className="checkout-customer-highlight">{formatQuantity(totalCartItems)} {totalCartItems === 1 ? 'item' : 'items'}</span> in the cart for <span className="checkout-customer-highlight">{selectedCustomer?.name || 'this customer'}</span>. Would you like to save this order as a draft or discard it?
               </p>
               <div className="checkout-confirm-actions">
                 <button
                   type="button"
-                  className="checkout-cancel-btn"
-                  onClick={() => setShowLeaveCartConfirm(false)}
+                  className="leave-cart-discard-btn"
+                  onClick={handleDiscardOrder}
                 >
-                  Stay
+                  Discard
                 </button>
                 <button
                   type="button"
-                  className="leave-cart-confirm-btn"
-                  onClick={() => {
-                    setShowLeaveCartConfirm(false);
-                    returnToCustomers();
-                  }}
+                  className="leave-cart-save-btn"
+                  onClick={handleSaveDraftOrder}
                 >
-                  Leave
+                  Save Draft
                 </button>
               </div>
             </div>
