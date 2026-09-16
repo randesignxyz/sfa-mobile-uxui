@@ -2,12 +2,14 @@
 
 import { useState, useMemo, useRef, useEffect } from 'react';
 import { CustomerVisitMapScreen } from './CustomerVisitMapScreen';
+import { VisitLiveTimer } from './VisitLiveTimer';
 import { formatQuantity } from '@/lib/format-number';
 
 export interface ShippingAddress {
   id: string;
   address: string;
   isDefault?: boolean;
+  distanceMeters?: number;
 }
 
 export interface Customer {
@@ -19,7 +21,9 @@ export interface Customer {
   type: 'Direct' | 'Indirect';
   isProspect?: boolean;
   address?: string;
+  distanceMeters?: number;
   shippingAddresses?: ShippingAddress[];
+  selectedShippingAddress?: ShippingAddress;
   image?: string;
 }
 
@@ -32,11 +36,13 @@ export const initialCustomers: Customer[] = [
     phone: '097 8050400',
     type: 'Direct',
     address: '#89, St 598, Sangkat Toul Kork, Khan Tuol Kouk, Phnom Penh',
+    distanceMeters: 18,
     shippingAddresses: [
       {
         id: 'addr-2',
         address: '#89, St 598, Sangkat Toul Kork, Khan Tuol Kouk, Phnom Penh',
         isDefault: true,
+        distanceMeters: 18,
       },
     ],
   },
@@ -48,11 +54,55 @@ export const initialCustomers: Customer[] = [
     phone: '093 636332',
     type: 'Direct',
     address: 'In front of Khmer Soviet Friendship Hospital, Chamraeun Phal, Boeng Tumpun 1, Mean Chey, Phnom Penh',
+    distanceMeters: 8000,
     shippingAddresses: [
       {
         id: 'addr-1',
         address: 'In front of Khmer Soviet Friendship Hospital, Chamraeun Phal, Boeng Tumpun 1, Mean Chey, Phnom Penh',
         isDefault: true,
+        distanceMeters: 8000,
+      },
+      {
+        id: 'addr-1-b',
+        address: '#128, St 271, Sangkat Boeng Tumpun, Khan Mean Chey, Phnom Penh',
+        isDefault: false,
+        distanceMeters: 8200,
+      },
+      {
+        id: 'addr-1-c',
+        address: 'Warehouse #5, National Road 2, Chak Angre Kraom, Mean Chey, Phnom Penh',
+        isDefault: false,
+        distanceMeters: 8500,
+      },
+      {
+        id: 'addr-1-d',
+        address: '#45A, St 371, Sangkat Stueng Mean Chey, Khan Mean Chey, Phnom Penh',
+        isDefault: false,
+        distanceMeters: 8100,
+      },
+    ],
+  },
+  {
+    id: 'c-9',
+    khmerName: 'ឈិន ពៅ',
+    name: 'Chhin Pov',
+    code: 'L902255',
+    phone: '077 554422',
+    type: 'Direct',
+    address: 'Street St 01, Spean Daek, Preak Tonloab, Leuk Daek, Kandal',
+    distanceMeters: 22,
+    shippingAddresses: [
+      {
+        id: 'addr-9',
+        address: 'Street St 01, Spean Daek, Preak Tonloab, Leuk Daek, Kandal',
+        isDefault: true,
+        distanceMeters: 22,
+      },
+      {
+        id: 'addr-9-b',
+        address: 'Street St 01, Spean Daek, Preak Tonloab, Leuk Daek, Kandal',
+        isDefault: false,
+        distanceMeters: 35,
       },
     ],
   },
@@ -64,6 +114,7 @@ export const initialCustomers: Customer[] = [
     phone: '012 914330',
     type: 'Indirect',
     address: 'Russian Blvd, Sangkat Teuk Thla, Khan Sen Sok, Phnom Penh',
+    distanceMeters: 8060,
   },
   {
     id: 'c-4',
@@ -73,6 +124,7 @@ export const initialCustomers: Customer[] = [
     phone: '088 776655',
     type: 'Direct',
     address: 'St 130, Central Market, Phnom Penh',
+    distanceMeters: 25,
   },
   {
     id: 'c-5',
@@ -82,6 +134,7 @@ export const initialCustomers: Customer[] = [
     phone: '012 345678',
     type: 'Direct',
     address: 'St 1003, Aeon Sen Sok, Phnom Penh',
+    distanceMeters: 5500,
   },
   {
     id: 'c-6',
@@ -91,6 +144,7 @@ export const initialCustomers: Customer[] = [
     phone: '096 554433',
     type: 'Indirect',
     address: 'St 315, Boeung Kak 2, Phnom Penh',
+    distanceMeters: 180,
   },
   {
     id: 'c-7',
@@ -100,6 +154,7 @@ export const initialCustomers: Customer[] = [
     phone: '085 221199',
     type: 'Direct',
     address: 'St 51, Boeung Keng Kang 1, Phnom Penh',
+    distanceMeters: 3500,
   },
   {
     id: 'c-8',
@@ -127,6 +182,8 @@ interface CustomersScreenProps {
   onCheckOutCustomer?: (customer: Customer) => void;
   onCloseMapCustomer?: () => void;
   cartItemCountsByCustomer?: Record<string, number>;
+  onTrigger15MinAlert?: (customer?: Customer) => void;
+  checkInStartTimes?: Record<string, number>;
 }
 
 /** Placeholder image icon matching design */
@@ -160,6 +217,8 @@ interface SwipeableCustomerCardProps {
   onCustomerCall?: () => void;
   onSalesCall?: () => void;
   cartItemCount?: number;
+  isCheckedIn?: boolean;
+  checkInStartTime?: number;
 }
 
 function SwipeableCustomerCard({
@@ -173,6 +232,8 @@ function SwipeableCustomerCard({
   onCustomerCall,
   onSalesCall,
   cartItemCount = 0,
+  isCheckedIn = false,
+  checkInStartTime,
 }: SwipeableCustomerCardProps) {
   const pointerStartRef = useRef<{ x: number; y: number; time: number } | null>(null);
   const isDraggingRef = useRef(false);
@@ -321,7 +382,16 @@ function SwipeableCustomerCard({
         <div className="customer-card-details">
           <div className="customer-names-block">
             <div className="customer-khmer-name">{customer.khmerName}</div>
-            <h2 className="customer-latin-name">{customer.name}</h2>
+            <div className="customer-title-timer-row">
+              <h2 className="customer-latin-name">{customer.name}</h2>
+              {isCheckedIn && checkInStartTime && (
+                <VisitLiveTimer
+                  startTime={checkInStartTime}
+                  variant="compact"
+                  showLimit={false}
+                />
+              )}
+            </div>
           </div>
 
           <div className="customer-meta-row">
@@ -347,23 +417,67 @@ function SwipeableCustomerCard({
               <span>{customer.code}</span>
             </div>
 
-            {/* Phone */}
-            <div className="customer-phone-meta">
-              <svg
-                width="14"
-                height="14"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="#6b7280"
-                strokeWidth="2"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                className="meta-svg-icon"
-              >
-                <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z" />
-              </svg>
-              <span>{customer.phone}</span>
-            </div>
+            {/* Phone & Telegram Action Buttons */}
+            {customer.phone && (
+              <div className="customer-contact-buttons-row">
+                {/* Phone Call Button */}
+                <a
+                  href={`tel:${customer.phone.replace(/\s+/g, '')}`}
+                  className="customer-phone-action-btn"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                  }}
+                  title={`Call ${customer.phone}`}
+                  aria-label={`Call ${customer.name} at ${customer.phone}`}
+                >
+                  <div className="contact-btn-icon-wrap is-phone">
+                    <svg
+                      width="12"
+                      height="12"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="#16a34a"
+                      strokeWidth="2.4"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                    >
+                      <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z" />
+                    </svg>
+                  </div>
+                  <span className="contact-phone-text">{customer.phone}</span>
+                </a>
+
+                {/* Telegram Button */}
+                <a
+                  href={`https://t.me/+${customer.phone.replace(/\D/g, '').startsWith('0') ? `855${customer.phone.replace(/\D/g, '').slice(1)}` : customer.phone.replace(/\D/g, '')}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="customer-telegram-action-btn"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                  }}
+                  title={`Open Telegram with ${customer.name}`}
+                  aria-label={`Open Telegram with ${customer.name}`}
+                >
+                  <div className="contact-btn-icon-wrap is-telegram">
+                    <svg
+                      width="12"
+                      height="12"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="#0284c7"
+                      strokeWidth="2.4"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                    >
+                      <line x1="22" y1="2" x2="11" y2="13" />
+                      <polygon points="22 2 15 22 11 13 2 9 22 2" fill="#0284c7" fillOpacity="0.25" />
+                    </svg>
+                  </div>
+                  <span className="contact-telegram-text">Telegram</span>
+                </a>
+              </div>
+            )}
           </div>
         </div>
       </article>
@@ -466,6 +580,8 @@ export function CustomersScreen({
   onCheckOutCustomer,
   onCloseMapCustomer,
   cartItemCountsByCustomer = {},
+  onTrigger15MinAlert,
+  checkInStartTimes = {},
 }: CustomersScreenProps) {
   const [primaryTab, setPrimaryTab] = useState<PrimaryFilterTab>('Customers');
   const [subFilter, setSubFilter] = useState<SubFilterType>('All');
@@ -515,15 +631,42 @@ export function CustomersScreen({
 
   if (activeMapVisitCustomer) {
     const isCheckedIn = checkedInCustomerIds.includes(activeMapVisitCustomer.id);
+    const customerCartCount = cartItemCountsByCustomer?.[activeMapVisitCustomer.id] ?? 0;
+    const hasCartItems = customerCartCount > 0;
+    const checkInStartTime = checkInStartTimes[activeMapVisitCustomer.id];
+
     return (
       <CustomerVisitMapScreen
         customer={activeMapVisitCustomer}
         isCheckedIn={isCheckedIn}
+        cartItemCount={customerCartCount}
+        hasCartItems={hasCartItems}
+        checkInStartTime={checkInStartTime}
+        onTrigger15MinAlert={() => {
+          if (onTrigger15MinAlert) {
+            onTrigger15MinAlert(activeMapVisitCustomer);
+          }
+        }}
         onBack={() => {
           setActiveMapVisitCustomer(null);
           setVisitCustomer(null);
           setSwipedCustomerId(null);
           if (onCloseMapCustomer) onCloseMapCustomer();
+        }}
+        onGoToCustomer={() => {
+          setActiveMapVisitCustomer(null);
+          setVisitCustomer(null);
+          setSwipedCustomerId(null);
+          if (onCloseMapCustomer) onCloseMapCustomer();
+        }}
+        onGoToOrder={(cust) => {
+          setActiveMapVisitCustomer(null);
+          setVisitCustomer(null);
+          setSwipedCustomerId(null);
+          if (onCloseMapCustomer) onCloseMapCustomer();
+          if (onSelectCustomer) {
+            onSelectCustomer(cust);
+          }
         }}
         onCheckIn={(cust) => {
           if (onCheckInCustomer) {
@@ -549,6 +692,24 @@ export function CustomersScreen({
           setActiveMapVisitCustomer(null);
           if (onCloseMapCustomer) onCloseMapCustomer();
           if (onSelectCustomer) {
+            onSelectCustomer(cust);
+          }
+        }}
+        onCustomerCall={(cust) => {
+          setActiveMapVisitCustomer(null);
+          if (onCloseMapCustomer) onCloseMapCustomer();
+          if (onCustomerCall) {
+            onCustomerCall(cust);
+          } else if (onSelectCustomer) {
+            onSelectCustomer(cust);
+          }
+        }}
+        onSalesCall={(cust) => {
+          setActiveMapVisitCustomer(null);
+          if (onCloseMapCustomer) onCloseMapCustomer();
+          if (onSalesCall) {
+            onSalesCall(cust);
+          } else if (onSelectCustomer) {
             onSelectCustomer(cust);
           }
         }}
@@ -728,7 +889,6 @@ export function CustomersScreen({
             <SwipeableCustomerCard
               key={cust.id}
               customer={cust}
-              disabled={cust.id !== 'c-1' && cust.id !== 'c-2'}
               isSwiped={swipedCustomerId === cust.id}
               onSwipeLeft={() => setSwipedCustomerId(cust.id)}
               onSwipeRight={() => setSwipedCustomerId(null)}
@@ -741,7 +901,7 @@ export function CustomersScreen({
               }}
               onVisit={() => {
                 setSwipedCustomerId(null);
-                setVisitCustomer(cust);
+                setActiveMapVisitCustomer(cust);
               }}
               onCustomerCall={() => {
                 if (onCustomerCall) {
@@ -762,6 +922,8 @@ export function CustomersScreen({
                 }
               }}
               cartItemCount={cartItemCountsByCustomer[cust.id] ?? 0}
+              isCheckedIn={checkedInCustomerIds.includes(cust.id)}
+              checkInStartTime={checkInStartTimes[cust.id]}
             />
           ))
         )}
@@ -910,72 +1072,100 @@ export function CustomersScreen({
 
             {/* Shipping Address Card List */}
             <div className="shipping-address-list">
-              <div
-                className="shipping-address-card"
-                onClick={() => {
-                  const cust = visitCustomer;
-                  setVisitCustomer(null);
-                  setActiveMapVisitCustomer(cust);
-                }}
-                role="button"
-                tabIndex={0}
-              >
-                <div className="shipping-address-left">
-                  <div className="shipping-map-icon">
+              {(visitCustomer.shippingAddresses && visitCustomer.shippingAddresses.length > 0
+                ? visitCustomer.shippingAddresses
+                : [
+                    {
+                      id: 'addr-default',
+                      address:
+                        visitCustomer.address ||
+                        'In front of Khmer Soviet Friendship Hospital, Chamraeun Phal, Boeng Tumpun 1, Mean Chey, Phnom Penh',
+                      isDefault: true,
+                    },
+                  ]
+              ).map((addr, idx) => (
+                <div
+                  key={addr.id || idx}
+                  className="shipping-address-card"
+                  onClick={() => {
+                    const cust = {
+                      ...visitCustomer,
+                      selectedShippingAddress: addr,
+                      address: addr.address,
+                    };
+                    setVisitCustomer(null);
+                    setActiveMapVisitCustomer(cust);
+                  }}
+                  role="button"
+                  tabIndex={0}
+                >
+                  <div className="shipping-address-left">
+                    <div className="shipping-map-icon">
+                      <svg
+                        width="20"
+                        height="20"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="#B49A00"
+                        strokeWidth="2.2"
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                      >
+                        <polygon points="3 6 9 3 15 6 21 3 21 18 15 21 9 18 3 21" />
+                        <line x1="9" y1="3" x2="9" y2="18" />
+                        <line x1="15" y1="6" x2="15" y2="21" />
+                      </svg>
+                    </div>
+                    <div className="shipping-address-text-group">
+                      <div className="shipping-address-title-row">
+                        <h3 className="shipping-customer-name">
+                          {visitCustomer.name} {addr.isDefault ? '(Default)' : `#${idx + 1}`}
+                        </h3>
+                        {addr.distanceMeters !== undefined && (
+                          <span className={`shipping-dist-badge ${addr.distanceMeters <= 30 ? 'is-in-range' : 'is-out-range'}`}>
+                            {addr.distanceMeters >= 1000 ? `${(addr.distanceMeters / 1000).toFixed(2)} km` : `${addr.distanceMeters} m`} • {addr.distanceMeters <= 30 ? '≤30m' : '>30m'}
+                          </span>
+                        )}
+                      </div>
+                      <p className="shipping-customer-address">{addr.address}</p>
+                    </div>
+                  </div>
+
+                  <button
+                    type="button"
+                    className="shipping-badge-btn"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      const cust = {
+                        ...visitCustomer,
+                        selectedShippingAddress: addr,
+                        address: addr.address,
+                      };
+                      setVisitCustomer(null);
+                      setActiveMapVisitCustomer(cust);
+                    }}
+                    aria-label={`Confirm shipping address #${idx + 1} for ${visitCustomer.name}`}
+                  >
                     <svg
-                      width="20"
-                      height="20"
+                      width="15"
+                      height="15"
                       viewBox="0 0 24 24"
                       fill="none"
-                      stroke="#B49A00"
+                      stroke="#0284c7"
                       strokeWidth="2.2"
                       strokeLinecap="round"
                       strokeLinejoin="round"
                     >
-                      <polygon points="3 6 9 3 15 6 21 3 21 18 15 21 9 18 3 21" />
-                      <line x1="9" y1="3" x2="9" y2="18" />
-                      <line x1="15" y1="6" x2="15" y2="21" />
+                      <path d="M14 18V6a2 2 0 0 0-2-2H4a2 2 0 0 0-2 2v11a1 1 0 0 0 1 1h2" />
+                      <path d="M15 18H9" />
+                      <path d="M19 18h2a1 1 0 0 0 1-1v-5l-3-4h-4" />
+                      <circle cx="7" cy="18" r="2" />
+                      <circle cx="17" cy="18" r="2" />
                     </svg>
-                  </div>
-                  <div className="shipping-address-text-group">
-                    <h3 className="shipping-customer-name">{visitCustomer.name}</h3>
-                    <p className="shipping-customer-address">
-                      {visitCustomer.address ||
-                        'In front of Khmer Soviet Friendship Hospital, Chamraeun Phal, Boeng Tumpun 1, Mean Chey, Phnom Penh'}
-                    </p>
-                  </div>
+                    <span>Shipping</span>
+                  </button>
                 </div>
-
-                <button
-                  type="button"
-                  className="shipping-badge-btn"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    const cust = visitCustomer;
-                    setVisitCustomer(null);
-                    setActiveMapVisitCustomer(cust);
-                  }}
-                  aria-label={`Confirm shipping address for ${visitCustomer.name}`}
-                >
-                  <svg
-                    width="15"
-                    height="15"
-                    viewBox="0 0 24 24"
-                    fill="none"
-                    stroke="#0284c7"
-                    strokeWidth="2.2"
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                  >
-                    <path d="M14 18V6a2 2 0 0 0-2-2H4a2 2 0 0 0-2 2v11a1 1 0 0 0 1 1h2" />
-                    <path d="M15 18H9" />
-                    <path d="M19 18h2a1 1 0 0 0 1-1v-5l-3-4h-4" />
-                    <circle cx="7" cy="18" r="2" />
-                    <circle cx="17" cy="18" r="2" />
-                  </svg>
-                  <span>Shipping</span>
-                </button>
-              </div>
+              ))}
             </div>
           </div>
         </div>

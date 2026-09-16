@@ -22,7 +22,7 @@ const initialProducts: Product[] = [
     code: 'FG000012',
     pack: 'x40 bottles',
     count: 0,
-    price: 4.5,
+    price: 4.0,
     unit: 'Case',
     image: '/assets/vital-250.jpg',
     imageFit: 'contain',
@@ -70,32 +70,32 @@ const initialProducts: Product[] = [
     code: 'FG000010',
     pack: 'x12 bottles',
     count: 0,
-    price: 4.5,
+    price: 4.0,
     unit: 'Case',
     image: '/assets/vital-1500.jpg',
     imageFit: 'contain',
   },
-  { id: 11, category: 'Mee Chiet', name: 'MC Pack - Minced Pork', code: 'OMM0008', pack: 'x24 packs', count: 0, price: 4.5, unit: 'Case', image: '/assets/mc-pack-minced-pork.jpg', imageFit: 'contain' },
-  { id: 12, category: 'Mee Chiet', name: 'MC Pack - Chicken Egg', code: 'OMM0015', pack: 'x24 packs', count: 0, price: 4.5, unit: 'Case', image: '/assets/mc-pack-chicken-egg.jpg', imageFit: 'contain' },
-  { id: 13, category: 'Mee Chiet', name: 'MC Pack - Beef Stew Original', code: 'OMM0011', pack: 'x24 packs', count: 0, price: 4.5, unit: 'Case', image: '/assets/mc-pack-beef-stew.jpg', imageFit: 'contain' },
-  { id: 14, category: 'Mee Chiet', name: 'MC Pack - Shrimp Sour Soup', code: 'OMM0004', pack: 'x24 packs', count: 0, price: 4.5, unit: 'Case', image: '/assets/mc-pack-shrimp-sour-soup.jpg', imageFit: 'contain' },
-  { id: 15, category: 'Mee Chiet', name: 'MC Pack - Machu Kroeung Beef', code: 'OMM0005', pack: 'x24 packs', count: 0, price: 4.5, unit: 'Case', image: '' },
+  { id: 11, category: 'Mee Chiet', name: 'MC Pack - Minced Pork', code: 'OMM0008', pack: 'x24 packs', count: 0, price: 4.0, unit: 'Case', image: '/assets/mc-pack-minced-pork.jpg', imageFit: 'contain' },
+  { id: 12, category: 'Mee Chiet', name: 'MC Pack - Chicken Egg', code: 'OMM0015', pack: 'x24 packs', count: 0, price: 4.0, unit: 'Case', image: '/assets/mc-pack-chicken-egg.jpg', imageFit: 'contain' },
+  { id: 13, category: 'Mee Chiet', name: 'MC Pack - Beef Stew Original', code: 'OMM0011', pack: 'x24 packs', count: 0, price: 4.0, unit: 'Case', image: '/assets/mc-pack-beef-stew.jpg', imageFit: 'contain' },
+  { id: 14, category: 'Mee Chiet', name: 'MC Pack - Shrimp Sour Soup', code: 'OMM0004', pack: 'x24 packs', count: 0, price: 4.0, unit: 'Case', image: '/assets/mc-pack-shrimp-sour-soup.jpg', imageFit: 'contain' },
+  { id: 15, category: 'Mee Chiet', name: 'MC Pack - Machu Kroeung Beef', code: 'OMM0005', pack: 'x24 packs', count: 0, price: 4.0, unit: 'Case', image: '/assets/mc-pack-beef-stew.jpg', imageFit: 'contain' },
   { id: 16, category: 'Mee Chiet', name: 'MC Pack - Spicy Seafood', code: 'OMM0019', pack: 'x24 packs', count: 0, price: 5, unit: 'Case', image: '/assets/mc-pack-spicy-seafood.jpg', imageFit: 'contain' },
-  { id: 17, category: 'Mee Chiet', name: 'MC Pack - Salted Egg', code: 'OMM0035', pack: 'x24 packs', count: 0, price: 5, unit: 'Case', image: '' },
-  { id: 18, category: 'Mee Chiet', name: 'MC Pack - Lobster Sour Creamy Soup', code: 'OMM0036', pack: 'x24 packs', count: 0, price: 4.5, unit: 'Case', image: '' },
+  { id: 17, category: 'Mee Chiet', name: 'MC Pack - Salted Egg', code: 'OMM0035', pack: 'x24 packs', count: 0, price: 5, unit: 'Case', image: '/assets/mc-pack-chicken-egg.jpg', imageFit: 'contain' },
+  { id: 18, category: 'Mee Chiet', name: 'MC Pack - Lobster Sour Creamy Soup', code: 'OMM0036', pack: 'x24 packs', count: 0, price: 4.0, unit: 'Case', image: '/assets/mc-pack-shrimp-sour-soup.jpg', imageFit: 'contain' },
   { id: 19, category: 'Mee Chiet', name: 'MC Cup - Minced Pork', code: 'OMM0029', pack: 'x24 cups', count: 0, price: 9, unit: 'Case', image: '/assets/mc-cup-minced-pork.jpg', imageFit: 'contain' },
   { id: 20, category: 'Mee Chiet', name: 'MC Cup - Beef Stew Original', code: 'OMM0030', pack: 'x24 cups', count: 0, price: 9, unit: 'Case', image: '/assets/mc-cup-beef-stew.jpg', imageFit: 'contain' },
   { id: 37, category: 'Mee Chiet', name: 'MC Cup - Shrimp Sour Soup', code: 'OMM0028', pack: 'x24 cups', count: 0, price: 9, unit: 'Case', image: '/assets/mc-cup-shrimp-sour-soup.jpg', imageFit: 'contain' },
   { id: 38, category: 'Mee Chiet', name: 'MC Cup - Spicy Seafood', code: 'OMM0031', pack: 'x24 cups', count: 0, price: 9, unit: 'Case', image: '/assets/mc-cup-spicy-seafood.jpg', imageFit: 'contain' },
   { id: 39, category: 'Mee Chiet', name: 'MC Sa-Sei Egg Noodle 500g', code: 'OMM0040', pack: 'x20 packs', count: 0, price: 6, unit: 'Case', alternateUnit: 'Pcs', image: '/assets/mc-sa-sei-egg-noodle-500g.jpg', imageFit: 'contain' },
-  { id: 23, category: 'OM', name: 'OM - Oyster Sauce 250g', code: 'FD02-OM010001', pack: 'x24 bottles', count: 0, price: 12.5, unit: 'Case', alternateUnit: 'Pcs', image: '/assets/om-oyster-sauce-250g.jpg', imageFit: 'contain' },
+  { id: 23, category: 'OM', name: 'OM - Oyster Sauce 250g', code: 'FD02-OM010001', pack: 'x24 bottles', count: 0, price: 12.5, packPrice: 4.0, alternatePrice: 1.5, unit: 'Case', packUnit: 'Pack', alternateUnit: 'Pcs', image: '/assets/om-oyster-sauce-250g.jpg', imageFit: 'contain' },
   { id: 24, category: 'OM', name: 'OM - Oyster Sauce 600g', code: 'FD02-OM010002', pack: 'x24 bottles', count: 0, price: 27.5, unit: 'Case', alternateUnit: 'Pcs', image: '/assets/om-oyster-sauce-600g.jpg', imageFit: 'contain' },
-  { id: 25, category: 'OM', name: 'OM - Oyster Sauce 6Kg', code: 'FD02-OM010016', pack: '', count: 0, price: 7, unit: 'Case', image: '' },
+  { id: 25, category: 'OM', name: 'OM - Oyster Sauce 6Kg', code: 'FD02-OM010016', pack: '', count: 0, price: 7, unit: 'Case', image: '/assets/om-oyster-sauce-600g.jpg', imageFit: 'contain' },
   { id: 26, category: 'OM', name: 'OM - Chili Sauce 250g', code: 'FD02-OM010003', pack: 'x24 bottles', count: 0, price: 12.5, unit: 'Case', image: '/assets/om-chili-sauce-250g.jpg', imageFit: 'contain' },
   { id: 27, category: 'OM', name: 'OM - Chili Sauce 500g', code: 'FD02-OM010004', pack: 'x24 bottles', count: 0, price: 22.5, unit: 'Case', image: '/assets/om-chili-sauce-500g.jpg', imageFit: 'contain' },
-  { id: 28, category: 'OM', name: 'OM - Soy Sauce 200 mL', code: 'FD02-OM010005', pack: '', count: 0, price: 10, unit: 'Case', image: '' },
-  { id: 29, category: 'OM', name: 'OM - Soy Sauce 500 mL', code: 'FD02-OM010006', pack: '', count: 0, price: 18, unit: 'Case', image: '' },
-  { id: 30, category: 'OM', name: 'OM - Fish Sauce 200 mL', code: 'FD02-OM010007', pack: '', count: 0, price: 15, unit: 'Case', image: '' },
+  { id: 28, category: 'OM', name: 'OM - Soy Sauce 200 mL', code: 'FD02-OM010005', pack: '', count: 0, price: 10, unit: 'Case', image: '/assets/om-oyster-sauce-250g.jpg', imageFit: 'contain' },
+  { id: 29, category: 'OM', name: 'OM - Soy Sauce 500 mL', code: 'FD02-OM010006', pack: '', count: 0, price: 18, unit: 'Case', image: '/assets/om-oyster-sauce-600g.jpg', imageFit: 'contain' },
+  { id: 30, category: 'OM', name: 'OM - Fish Sauce 200 mL', code: 'FD02-OM010007', pack: '', count: 0, price: 15, unit: 'Case', image: '/assets/om-chili-sauce-250g.jpg', imageFit: 'contain' },
   { id: 31, category: 'OM', name: 'OM - Pork Powder 165g', code: 'FD02-OM010008', pack: 'x72 packs', count: 0, price: 14.5, unit: 'Case', alternateUnit: 'Pcs', image: '/assets/om-pork-powder-165g.jpg', imageFit: 'contain' },
   { id: 32, category: 'OM', name: 'OM - Pork Powder 400g', code: 'FD02-OM010009', pack: 'x36 packs', count: 0, price: 18.5, unit: 'Case', alternateUnit: 'Pcs', image: '/assets/om-pork-powder-400g.jpg', imageFit: 'contain' },
   { id: 33, category: 'OM', name: 'OM - Chicken Powder 165g', code: 'FD02-OM010010', pack: 'x72 packs', count: 0, price: 14.5, unit: 'Case', alternateUnit: 'Pcs', image: '/assets/om-chicken-powder-165g.jpg', imageFit: 'contain' },
@@ -177,9 +177,8 @@ function ProductCard({
           <img
             src={product.image}
             alt={product.name}
-            className={`card-thumb-img ${
-              product.imageFit === 'cover' ? 'is-cover' : ''
-            }`}
+            className={`card-thumb-img ${product.imageFit === 'cover' ? 'is-cover' : ''
+              }`}
           />
         ) : (
           <div className="card-thumb-placeholder" />
@@ -250,6 +249,7 @@ export default function Home() {
   const [selectedProductForCart, setSelectedProductForCart] = useState<Product | null>(null);
   const [wasEditingFromCart, setWasEditingFromCart] = useState(false);
   const [isLandscape, setIsLandscape] = useState(false);
+  const [deviceModel, setDeviceModel] = useState<'iphone-16-pro-max' | 'iphone-13'>('iphone-16-pro-max');
   const [checkedInCustomerIds, setCheckedInCustomerIds] = useState<string[]>([]);
   const [activeMapCustomer, setActiveMapCustomer] = useState<Customer | null>(null);
   const [shouldSlideToOrder, setShouldSlideToOrder] = useState(false);
@@ -259,13 +259,17 @@ export default function Home() {
   } | null>(null);
   const [showLeaveCartConfirm, setShowLeaveCartConfirm] = useState(false);
   const [customerCarts, setCustomerCarts] = useState<Record<string, CustomerCartState>>({});
+  const [isFifteenMinAlertOpen, setIsFifteenMinAlertOpen] = useState(false);
+  const [alertCustomer, setAlertCustomer] = useState<Customer | null>(null);
   const callNavigationTimerRef = useRef<number | null>(null);
+  const checkInTimersRef = useRef<Record<string, NodeJS.Timeout>>({});
 
   useEffect(() => {
     return () => {
       if (callNavigationTimerRef.current) {
         window.clearTimeout(callNavigationTimerRef.current);
       }
+      Object.values(checkInTimersRef.current).forEach((t) => clearTimeout(t));
     };
   }, []);
 
@@ -307,11 +311,26 @@ export default function Home() {
     activateCustomerCart(cust);
     setActiveMapCustomer(cust);
     setActiveNavTab('Order');
+
+    // 15-minute checkout reminder timer (15 * 60 * 1000 ms)
+    if (checkInTimersRef.current[cust.id]) {
+      clearTimeout(checkInTimersRef.current[cust.id]);
+    }
+    checkInTimersRef.current[cust.id] = setTimeout(() => {
+      setAlertCustomer(cust);
+      setIsFifteenMinAlertOpen(true);
+    }, 15 * 60 * 1000);
   };
 
   const handleCheckOutCustomer = (cust: Customer) => {
+    if (checkInTimersRef.current[cust.id]) {
+      clearTimeout(checkInTimersRef.current[cust.id]);
+      delete checkInTimersRef.current[cust.id];
+    }
     setCheckedInCustomerIds((prev) => prev.filter((id) => id !== cust.id));
     setActiveMapCustomer(null);
+    setIsFifteenMinAlertOpen(false);
+    setAlertCustomer(null);
     setActiveNavTab('Customer');
     notify(`Checked out from ${cust.name}`);
   };
@@ -389,16 +408,22 @@ export default function Home() {
     return Object.values(counts).reduce((sum, val) => sum + val, 0);
   }, [counts]);
 
-  const cartItemCountsByCustomer = useMemo(
-    () =>
-      Object.fromEntries(
-        Object.entries(customerCarts).map(([customerId, cart]) => [
-          customerId,
-          Object.values(cart.counts).reduce((sum, itemCount) => sum + itemCount, 0),
-        ]),
-      ),
-    [customerCarts],
-  );
+  const cartItemCountsByCustomer = useMemo(() => {
+    const countsMap: Record<string, number> = {};
+    Object.entries(customerCarts).forEach(([customerId, cart]) => {
+      const lineQty = cart.cartLines?.reduce((sum, line) => sum + line.quantity, 0) ?? 0;
+      const countQty = Object.values(cart.counts || {}).reduce((sum, val) => sum + val, 0);
+      countsMap[customerId] = Math.max(lineQty, countQty);
+    });
+
+    if (selectedCustomer) {
+      const activeLineQty = cartLines.reduce((sum, line) => sum + line.quantity, 0);
+      const activeCountQty = Object.values(counts || {}).reduce((sum, val) => sum + val, 0);
+      countsMap[selectedCustomer.id] = Math.max(activeLineQty, activeCountQty);
+    }
+
+    return countsMap;
+  }, [customerCarts, selectedCustomer, counts, cartLines]);
 
   function returnToCustomers() {
     if (selectedCustomer && checkedInCustomerIds.includes(selectedCustomer.id)) {
@@ -471,6 +496,7 @@ export default function Home() {
     quantity: number,
     tierBreakdown?: Record<PriceTier, number>,
     alternateQuantity = 0,
+    packQuantity = 0,
   ) {
     const nextCounts = { ...counts, [product.id]: quantity };
     const nextProductTiers = tierBreakdown
@@ -503,7 +529,24 @@ export default function Home() {
         }
       });
       nextCartLines = [...withoutProduct, ...newLines];
+      if (product.packUnit && packQuantity > 0) {
+        const pUnitPrice = product.packPrice ?? (product.price > 5 ? 4.0 : 2.5);
+        nextCartLines.push({
+          id: `${product.id}-std-${product.packUnit.toLowerCase()}`,
+          productId: product.id,
+          productName: product.name,
+          productCode: product.code,
+          productImage: product.image || '',
+          imageFit: product.imageFit,
+          unit: product.packUnit,
+          tier: 'STD',
+          quantity: packQuantity,
+          unitPrice: pUnitPrice,
+          totalPrice: pUnitPrice * packQuantity,
+        });
+      }
       if (product.alternateUnit && alternateQuantity > 0) {
+        const altUnitPrice = product.alternatePrice ?? product.price;
         nextCartLines.push({
           id: `${product.id}-std-${product.alternateUnit.toLowerCase()}`,
           productId: product.id,
@@ -514,8 +557,8 @@ export default function Home() {
           unit: product.alternateUnit,
           tier: 'STD',
           quantity: alternateQuantity,
-          unitPrice: product.price,
-          totalPrice: product.price * alternateQuantity,
+          unitPrice: altUnitPrice,
+          totalPrice: altUnitPrice * alternateQuantity,
         });
       }
     }
@@ -622,8 +665,82 @@ export default function Home() {
 
   return (
     <main className={`prototype-stage ${isLandscape ? 'is-landscape-stage' : ''}`}>
+      {/* Web Device Switcher Toolbar */}
+      <div className="prototype-device-toolbar" aria-label="Device Switcher">
+        <div className="device-switcher-pill" role="tablist" aria-label="Device screen model">
+          <button
+            type="button"
+            role="tab"
+            aria-selected={deviceModel === 'iphone-16-pro-max'}
+            className={`device-btn ${deviceModel === 'iphone-16-pro-max' ? 'is-active' : ''}`}
+            onClick={() => setDeviceModel('iphone-16-pro-max')}
+          >
+            <svg
+              width="14"
+              height="14"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2.2"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            >
+              <rect width="14" height="20" x="5" y="2" rx="3" />
+              <line x1="12" y1="18" x2="12" y2="18" />
+            </svg>
+            <span className="device-name">iPhone 16 Pro Max</span>
+            <span className="device-resolution">440 × 956</span>
+          </button>
+          <button
+            type="button"
+            role="tab"
+            aria-selected={deviceModel === 'iphone-13'}
+            className={`device-btn ${deviceModel === 'iphone-13' ? 'is-active' : ''}`}
+            onClick={() => setDeviceModel('iphone-13')}
+          >
+            <svg
+              width="14"
+              height="14"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2.2"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            >
+              <rect width="13" height="19" x="5.5" y="2.5" rx="2.5" />
+              <line x1="12" y1="18" x2="12" y2="18" />
+            </svg>
+            <span className="device-name">iPhone 13</span>
+            <span className="device-resolution">390 × 844</span>
+          </button>
+        </div>
+
+        <button
+          type="button"
+          className={`device-orientation-btn ${isLandscape ? 'is-landscape-active' : ''}`}
+          onClick={() => setIsLandscape(!isLandscape)}
+          title={isLandscape ? 'Switch to Portrait' : 'Switch to Landscape'}
+          aria-label={isLandscape ? 'Switch to Portrait' : 'Switch to Landscape'}
+        >
+          <svg
+            width="15"
+            height="15"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="2.2"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+          >
+            <path d="M21.5 2v6h-6M21.34 15.57a10 10 0 1 1-.57-8.38l5.67-5.67" />
+          </svg>
+          <span>{isLandscape ? 'Landscape' : 'Portrait'}</span>
+        </button>
+      </div>
+
       <section
-        className={`phone ${isLandscape ? 'is-landscape' : ''}`}
+        className={`phone device-${deviceModel} ${isLandscape ? 'is-landscape' : ''}`}
         aria-label="SFA sales order mobile prototype"
         onTouchStart={handleTouchStart}
         onTouchEnd={handleTouchEnd}
@@ -649,6 +766,10 @@ export default function Home() {
             onNavigateTab={setActiveNavTab}
             activeNavTab={activeNavTab}
             cartItemCountsByCustomer={cartItemCountsByCustomer}
+            onTrigger15MinAlert={(cust) => {
+              setAlertCustomer(cust || selectedCustomer);
+              setIsFifteenMinAlertOpen(true);
+            }}
           />
         ) : (
           <div
@@ -796,6 +917,13 @@ export default function Home() {
                 product={selectedProductForCart}
                 customerId={selectedCustomer.id}
                 initialTiers={productTiers[selectedProductForCart.id]}
+                initialPackQuantity={
+                  cartLines.find(
+                    (line) =>
+                      line.productId === selectedProductForCart.id &&
+                      line.unit === selectedProductForCart.packUnit,
+                  )?.quantity ?? 0
+                }
                 initialAlternateQuantity={
                   cartLines.find(
                     (line) =>
@@ -923,6 +1051,108 @@ export default function Home() {
                   onClick={handleSaveDraftOrder}
                 >
                   Save Draft
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* 15-Minute Check-out Reminder Modal Alert */}
+        {isFifteenMinAlertOpen && (
+          <div
+            className="checkin-modal-backdrop"
+            role="dialog"
+            aria-modal="true"
+            aria-label="15-Minute Checkout Reminder"
+            onClick={() => setIsFifteenMinAlertOpen(false)}
+          >
+            <div
+              className="fifteen-min-reminder-card"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <div className="fifteen-min-icon-wrap">
+                <svg
+                  width="32"
+                  height="32"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="#d97706"
+                  strokeWidth="2.2"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                >
+                  <circle cx="12" cy="12" r="10" />
+                  <polyline points="12 6 12 12 16 14" />
+                </svg>
+              </div>
+
+              <div className="fifteen-min-pill-tag">
+                <span>⏱️ 15 MINUTES REACHED</span>
+              </div>
+
+              <h2 className="fifteen-min-title">Checkout Reminder</h2>
+
+              <p className="fifteen-min-desc">
+                You have been checked in at{' '}
+                <span className="checkout-customer-highlight">
+                  {alertCustomer?.name || selectedCustomer?.name || 'Customer'}
+                </span>{' '}
+                for <span className="fifteen-min-time-highlight">15 minutes</span>. Please check out to complete your visit.
+              </p>
+
+              <div className="fifteen-min-stat-box">
+                <div className="fifteen-min-stat-row">
+                  <span className="stat-label">Elapsed Time:</span>
+                  <span className="stat-val is-time">15:00 min</span>
+                </div>
+                <div className="fifteen-min-stat-row">
+                  <span className="stat-label">Customer:</span>
+                  <span className="stat-val">
+                    {alertCustomer?.name || selectedCustomer?.name}
+                  </span>
+                </div>
+              </div>
+
+              <div className="fifteen-min-actions">
+                <button
+                  type="button"
+                  className="fifteen-min-checkout-btn"
+                  onClick={() => {
+                    setIsFifteenMinAlertOpen(false);
+                    const targetCust = alertCustomer || selectedCustomer;
+                    if (targetCust) {
+                      setActiveMapCustomer(targetCust);
+                      setActiveNavTab('Customer');
+                      notify(`Opening visit checkout for ${targetCust.name}`);
+                    }
+                  }}
+                >
+                  <svg
+                    width="18"
+                    height="18"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="#ffffff"
+                    strokeWidth="2.4"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                  >
+                    <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" />
+                    <polyline points="16 17 21 12 16 7" />
+                    <line x1="21" y1="12" x2="9" y2="12" />
+                  </svg>
+                  <span>Check Out Now</span>
+                </button>
+
+                <button
+                  type="button"
+                  className="fifteen-min-snooze-btn"
+                  onClick={() => {
+                    setIsFifteenMinAlertOpen(false);
+                    notify('Visit continued (Reminder dismissed)');
+                  }}
+                >
+                  Continue Visit
                 </button>
               </div>
             </div>

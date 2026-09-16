@@ -55,7 +55,10 @@ export type ProductItem = {
   pack: string;
   count: number;
   price: number;
+  packPrice?: number;
+  alternatePrice?: number;
   unit: string;
+  packUnit?: string;
   alternateUnit?: string;
   image: string;
   imageFit?: 'contain' | 'cover';
@@ -65,6 +68,7 @@ interface AddToCartScreenProps {
   product: ProductItem;
   customerId?: string;
   initialTiers?: Record<PriceTier, number>;
+  initialPackQuantity?: number;
   initialAlternateQuantity?: number;
   onBack: () => void;
   onAddToCart: (
@@ -72,6 +76,7 @@ interface AddToCartScreenProps {
     totalQuantity: number,
     tierBreakdown?: Record<PriceTier, number>,
     alternateQuantity?: number,
+    packQuantity?: number,
   ) => void;
 }
 
@@ -98,12 +103,15 @@ export function AddToCartScreen({
   product,
   customerId,
   initialTiers,
+  initialPackQuantity = 0,
   initialAlternateQuantity = 0,
   onBack,
   onAddToCart,
 }: AddToCartScreenProps) {
   const isEditingCartItem = initialTiers
-    ? Object.values(initialTiers).some((quantity) => quantity > 0) || initialAlternateQuantity > 0
+    ? Object.values(initialTiers).some((quantity) => quantity > 0) ||
+      initialPackQuantity > 0 ||
+      initialAlternateQuantity > 0
     : product.count > 0;
 
   // Store quantities for each tier based on initial product state
@@ -117,12 +125,18 @@ export function AddToCartScreen({
 
   const activeTier: PriceTier = 'STD';
   const [showKeyboard, setShowKeyboard] = useState(false);
-  const [activeInputField, setActiveInputField] = useState<'main' | 'alternate'>('main');
+  const [activeInputField, setActiveInputField] = useState<'main' | 'pack' | 'alternate'>('main');
+
+  const [packQuantity, setPackQuantity] = useState(initialPackQuantity);
+  const [packInputValue, setPackInputValue] = useState(initialPackQuantity.toString());
+
   const [alternateQuantity, setAlternateQuantity] = useState(initialAlternateQuantity);
   const [alternateInputValue, setAlternateInputValue] = useState(initialAlternateQuantity.toString());
 
   const currentTierConfig = TIERS[activeTier];
   const activeUnitPrice = product.price * currentTierConfig.rateMultiplier;
+  const packUnitPrice = product.packPrice ?? (product.price > 5 ? 4.0 : 2.5);
+  const alternateUnitPrice = product.alternatePrice ?? product.price;
 
   const currentQuantity = tierQuantities[activeTier] || 0;
   const [inputValue, setInputValue] = useState(currentQuantity.toString());
@@ -147,13 +161,20 @@ export function AddToCartScreen({
 
   // Combined grand total
   const grandTotal = useMemo(() => {
-    return summaryBreakdown.reduce((sum, item) => sum + item.total, 0) +
-      alternateQuantity * product.price;
-  }, [summaryBreakdown, alternateQuantity, product.price]);
+    return (
+      summaryBreakdown.reduce((sum, item) => sum + item.total, 0) +
+      packQuantity * packUnitPrice +
+      alternateQuantity * alternateUnitPrice
+    );
+  }, [summaryBreakdown, packQuantity, packUnitPrice, alternateQuantity, alternateUnitPrice]);
 
   const totalQuantity = useMemo(() => {
-    return summaryBreakdown.reduce((sum, item) => sum + item.qty, 0) + alternateQuantity;
-  }, [summaryBreakdown, alternateQuantity]);
+    return (
+      summaryBreakdown.reduce((sum, item) => sum + item.qty, 0) +
+      packQuantity +
+      alternateQuantity
+    );
+  }, [summaryBreakdown, packQuantity, alternateQuantity]);
   const automaticPromotions = getAutomaticPromotions(
     customerId,
     product.name,
@@ -168,7 +189,34 @@ export function AddToCartScreen({
   };
 
   const handleKeyPress = (key: string) => {
-    if (activeInputField === 'alternate') {
+    if (activeInputField === 'pack') {
+      if (key === 'backspace') {
+        if (packInputValue.length <= 1 || packInputValue === '0') {
+          setPackInputValue('0');
+          setPackQuantity(0);
+        } else {
+          const nextVal = packInputValue.slice(0, -1);
+          const parsed = parseInt(nextVal, 10) || 0;
+          setPackInputValue(nextVal);
+          setPackQuantity(parsed);
+        }
+      } else if (key === 'clear') {
+        setPackInputValue('0');
+        setPackQuantity(0);
+      } else {
+        let nextVal = packInputValue;
+        if (packInputValue === '0' || packInputValue === '') {
+          nextVal = key;
+        } else {
+          if (packInputValue.length < 5) {
+            nextVal = packInputValue + key;
+          }
+        }
+        const parsed = parseInt(nextVal, 10) || 0;
+        setPackInputValue(nextVal);
+        setPackQuantity(parsed);
+      }
+    } else if (activeInputField === 'alternate') {
       if (key === 'backspace') {
         if (alternateInputValue.length <= 1 || alternateInputValue === '0') {
           setAlternateInputValue('0');
@@ -248,6 +296,29 @@ export function AddToCartScreen({
     }
   };
 
+  const handlePackInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const val = e.target.value.replace(/[^0-9]/g, '');
+    if (val === '') {
+      setPackInputValue('');
+      setPackQuantity(0);
+      return;
+    }
+    const parsed = parseInt(val, 10);
+    setPackInputValue(parsed.toString());
+    setPackQuantity(parsed);
+  };
+
+  const handlePackBlur = () => {
+    if (packInputValue === '' || isNaN(parseInt(packInputValue, 10))) {
+      setPackInputValue('0');
+      setPackQuantity(0);
+    } else {
+      const parsed = parseInt(packInputValue, 10);
+      setPackInputValue(parsed.toString());
+      setPackQuantity(parsed);
+    }
+  };
+
   const handleAlternateInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const val = e.target.value.replace(/[^0-9]/g, '');
     if (val === '') {
@@ -272,7 +343,7 @@ export function AddToCartScreen({
   };
 
   const handleConfirm = () => {
-    onAddToCart(product, totalQuantity, tierQuantities, alternateQuantity);
+    onAddToCart(product, totalQuantity, tierQuantities, alternateQuantity, packQuantity);
   };
 
   return (
@@ -360,7 +431,17 @@ export function AddToCartScreen({
           <div className="quantity-row">
             <div className="quantity-row-left">
               <div className="unit-icon-box">
-                <PlaceholderIcon className="unit-placeholder-icon" />
+                {product.image ? (
+                  <img
+                    src={product.image}
+                    alt={product.name}
+                    className={`unit-icon-img ${
+                      product.imageFit === 'cover' ? 'is-cover' : ''
+                    }`}
+                  />
+                ) : (
+                  <PlaceholderIcon className="unit-placeholder-icon" />
+                )}
               </div>
               <div className="unit-details">
                 <span className="unit-name">{product.unit || 'Case'}</span>
@@ -371,7 +452,7 @@ export function AddToCartScreen({
             </div>
 
             <div className="quantity-row-right">
-              <div className="unit-row-price">${formatMoney(activeUnitPrice)}</div>
+              <div className="unit-row-price">${formatMoney(currentQuantity * activeUnitPrice)}</div>
               <div className="quantity-input-wrap">
                 <input
                   type="text"
@@ -398,21 +479,83 @@ export function AddToCartScreen({
             </div>
           </div>
 
-          {product.alternateUnit && (
-            <div className="quantity-row alternate-unit-row">
+          {product.packUnit && (
+            <div className="quantity-row pack-unit-row">
               <div className="quantity-row-left">
                 <div className="unit-icon-box">
-                  <PlaceholderIcon className="unit-placeholder-icon" />
+                  {product.image ? (
+                    <img
+                      src={product.image}
+                      alt={product.name}
+                      className={`unit-icon-img ${
+                        product.imageFit === 'cover' ? 'is-cover' : ''
+                      }`}
+                    />
+                  ) : (
+                    <PlaceholderIcon className="unit-placeholder-icon" />
+                  )}
                 </div>
                 <div className="unit-details">
-                  <span className="unit-name">{product.alternateUnit}</span>
+                  <span className="unit-name">{product.packUnit}</span>
                   <span className="unit-price-rate">
-                    ${formatMoney(product.price)}/ {product.alternateUnit}
+                    ${formatMoney(packUnitPrice)}/ {product.packUnit}
                   </span>
                 </div>
               </div>
               <div className="quantity-row-right">
-                <div className="unit-row-price">${formatMoney(product.price)}</div>
+                <div className="unit-row-price">${formatMoney(packQuantity * packUnitPrice)}</div>
+                <div className="quantity-input-wrap">
+                  <input
+                    type="text"
+                    inputMode="numeric"
+                    pattern="[0-9]*"
+                    value={packInputValue}
+                    onChange={handlePackInputChange}
+                    onFocus={() => {
+                      setActiveInputField('pack');
+                      setShowKeyboard(true);
+                    }}
+                    onClick={() => {
+                      setActiveInputField('pack');
+                      setShowKeyboard(true);
+                    }}
+                    onBlur={handlePackBlur}
+                    className={`quantity-input-field ${
+                      showKeyboard && activeInputField === 'pack' ? 'is-focused' : ''
+                    }`}
+                    placeholder="0"
+                    aria-label={`Enter ${product.packUnit} quantity`}
+                  />
+                </div>
+              </div>
+            </div>
+          )}
+
+          {product.alternateUnit && (
+            <div className="quantity-row alternate-unit-row">
+              <div className="quantity-row-left">
+                <div className="unit-icon-box">
+                  {product.image ? (
+                    <img
+                      src={product.image}
+                      alt={product.name}
+                      className={`unit-icon-img ${
+                        product.imageFit === 'cover' ? 'is-cover' : ''
+                      }`}
+                    />
+                  ) : (
+                    <PlaceholderIcon className="unit-placeholder-icon" />
+                  )}
+                </div>
+                <div className="unit-details">
+                  <span className="unit-name">{product.alternateUnit}</span>
+                  <span className="unit-price-rate">
+                    ${formatMoney(alternateUnitPrice)}/ {product.alternateUnit}
+                  </span>
+                </div>
+              </div>
+              <div className="quantity-row-right">
+                <div className="unit-row-price">${formatMoney(alternateQuantity * alternateUnitPrice)}</div>
                 <div className="quantity-input-wrap">
                   <input
                     type="text"
@@ -468,6 +611,19 @@ export function AddToCartScreen({
                   </div>
                 );
               })}
+              {product.packUnit && packQuantity > 0 && (
+                <div className="footer-summary-line">
+                  <div className="footer-summary-details-group">
+                    <span className="footer-summary-qty">
+                      {formatQuantity(packQuantity)} x {product.packUnit}
+                    </span>
+                    <TransactionTypeTag code="STD" />
+                  </div>
+                  <span className="footer-summary-price">
+                    ${formatMoney(packQuantity * packUnitPrice)}
+                  </span>
+                </div>
+              )}
               {product.alternateUnit && alternateQuantity > 0 && (
                 <div className="footer-summary-line">
                   <div className="footer-summary-details-group">
@@ -477,7 +633,7 @@ export function AddToCartScreen({
                     <TransactionTypeTag code="STD" />
                   </div>
                   <span className="footer-summary-price">
-                    ${formatMoney(alternateQuantity * product.price)}
+                    ${formatMoney(alternateQuantity * alternateUnitPrice)}
                   </span>
                 </div>
               )}
@@ -489,7 +645,7 @@ export function AddToCartScreen({
                     </span>
                     <TransactionTypeTag code={promotion.type} />
                   </div>
-                  <span className="footer-summary-price is-zero-price">$0.0000</span>
+                  <span className="footer-summary-price is-zero-price">$0.00</span>
                 </div>
               ))}
             </div>

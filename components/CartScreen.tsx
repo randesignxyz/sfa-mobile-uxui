@@ -137,7 +137,7 @@ const promoProductCatalog: ProductItem[] = [
     code: 'FG000010',
     pack: 'x12 bottles',
     count: 0,
-    price: 4.5,
+    price: 4.0,
     unit: 'Case',
     image: '/assets/vital-1500.jpg',
     imageFit: 'contain',
@@ -160,7 +160,7 @@ const promoProductCatalog: ProductItem[] = [
     code: 'OMM0008',
     pack: 'x24 packs',
     count: 0,
-    price: 4.5,
+    price: 4.0,
     unit: 'Case',
     image: '/assets/mc-pack-minced-pork.jpg',
     imageFit: 'contain',
@@ -172,7 +172,7 @@ const promoProductCatalog: ProductItem[] = [
     code: 'OMM0015',
     pack: 'x24 packs',
     count: 0,
-    price: 4.5,
+    price: 4.0,
     unit: 'Case',
     image: '/assets/mc-pack-chicken-egg.jpg',
     imageFit: 'contain',
@@ -184,7 +184,7 @@ const promoProductCatalog: ProductItem[] = [
     code: 'OMM0011',
     pack: 'x24 packs',
     count: 0,
-    price: 4.5,
+    price: 4.0,
     unit: 'Case',
     image: '/assets/mc-pack-beef-stew.jpg',
     imageFit: 'contain',
@@ -196,7 +196,7 @@ const promoProductCatalog: ProductItem[] = [
     code: 'OMM0004',
     pack: 'x24 packs',
     count: 0,
-    price: 4.5,
+    price: 4.0,
     unit: 'Case',
     image: '/assets/mc-pack-shrimp-sour-soup.jpg',
     imageFit: 'contain',
@@ -481,6 +481,7 @@ type GratisPromotion = {
   quantity: number;
   unit: string;
   type: PromoTypeCode;
+  remark?: string;
 };
 
 const GRATIS_PROMOTIONS: GratisPromotion[] = [
@@ -490,6 +491,7 @@ const GRATIS_PROMOTIONS: GratisPromotion[] = [
     quantity: 5,
     unit: 'Case',
     type: 'TDI',
+    remark: 'ផលតិផលលើកទឹកចិត្តការលក់ប្រចាំខែ 1,0,3 ឆ្នាំ 2026',
   },
   {
     id: 'gratis-vital-1500-tdi',
@@ -497,6 +499,7 @@ const GRATIS_PROMOTIONS: GratisPromotion[] = [
     quantity: 5,
     unit: 'Case',
     type: 'TDI',
+    remark: 'ផលតិផលលើកទឹកចិត្តការលក់ប្រចាំខែ 1,0,3 ឆ្នាំ 2026',
   },
 ];
 
@@ -1042,7 +1045,9 @@ export function CartScreen({
                   <div className="promotion-gratis-heading-row">
                     <div className="promotions-title-row">
                       <span className="promotions-label">Gratis</span>
-                      <span className="promotions-count">({appliedGratisIds.length})</span>
+                      <span className="promotions-count">
+                        ({appliedGratisIds.length}/{GRATIS_PROMOTIONS.length})
+                      </span>
                     </div>
                     <button
                       type="button"
@@ -1056,11 +1061,25 @@ export function CartScreen({
 
                   {appliedGratisIds.length > 0 && (
                     <div className="applied-gratis-list">
-                      {appliedGratisIds.map((gratisId) => {
+                      {appliedGratisIds.map((gratisId, gIdx) => {
                         const promotion = GRATIS_PROMOTIONS.find((item) => item.id === gratisId);
-                        return promotion ? (
+                        if (!promotion) return null;
+                        const prevPromotion =
+                          gIdx > 0
+                            ? GRATIS_PROMOTIONS.find((item) => item.id === appliedGratisIds[gIdx - 1])
+                            : null;
+                        const showRemark = Boolean(
+                          promotion.remark &&
+                            (!prevPromotion || prevPromotion.remark !== promotion.remark),
+                        );
+                        return (
                           <div className="applied-gratis-row" key={gratisId}>
-                            <span className="applied-gratis-product">{promotion.productName}</span>
+                            <div className="applied-gratis-product-info">
+                              {showRemark && (
+                                <span className="applied-gratis-remark">{promotion.remark}</span>
+                              )}
+                              <span className="applied-gratis-product">{promotion.productName}</span>
+                            </div>
                             <div className="applied-gratis-details">
                               <TransactionTypeTag code={promotion.type} />
                               <span className="applied-gratis-quantity">
@@ -1068,7 +1087,7 @@ export function CartScreen({
                               </span>
                             </div>
                           </div>
-                        ) : null;
+                        );
                       })}
                     </div>
                   )}
@@ -1829,6 +1848,7 @@ export function CartScreen({
                     key={promotion.id}
                   >
                     <div className="gratis-promotion-info">
+                      <p className="gratis-remark-line">{promotion.remark || 'ផលតិផលលើកទឹកចិត្តការលក់ប្រចាំខែ 1,0,3 ឆ្នាំ 2026'}</p>
                       <h3>{promotion.productName}</h3>
                       <div className="gratis-transaction-line">
                         <TransactionTypeTag code={promotion.type} />
@@ -1903,6 +1923,20 @@ export function CartScreen({
         <OrderInvoicePreview
           cartLines={cartLines}
           linePromotions={displayedLinePromotions}
+          appliedGratisPromotions={appliedGratisIds
+            .map((id) => {
+              const promo = GRATIS_PROMOTIONS.find((p) => p.id === id);
+              if (!promo) return null;
+              return {
+                id: promo.id,
+                productName: promo.productName,
+                type: promo.type,
+                remark: promo.remark || 'ផលតិផលលើកទឹកចិត្តការលក់ប្រចាំខែ 1,0,3 ឆ្នាំ 2026',
+                quantity: appliedGratisQuantities[id] ?? promo.quantity,
+                unit: promo.unit,
+              };
+            })
+            .filter((item): item is NonNullable<typeof item> => Boolean(item))}
           subtotal={subtotal}
           discount={discount}
           total={total}

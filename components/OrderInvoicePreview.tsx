@@ -1,8 +1,24 @@
 'use client';
 
-import { useMemo, useState, useEffect } from 'react';
+import { useMemo, useState, useEffect, Fragment } from 'react';
 import { CartLineItem, PromoTypeCode } from './CartScreen';
-import { formatMoney, formatQuantity } from '@/lib/format-number';
+import { formatQuantity } from '@/lib/format-number';
+
+const invoiceMoneyFormatter = new Intl.NumberFormat('en-US', {
+  minimumFractionDigits: 2,
+  maximumFractionDigits: 2,
+});
+
+const formatInvoiceMoney = (val: number) => invoiceMoneyFormatter.format(val);
+
+export interface GratisPreviewItem {
+  id: string;
+  productName: string;
+  type?: string;
+  remark?: string;
+  quantity: number;
+  unit: string;
+}
 
 interface OrderInvoicePreviewProps {
   cartLines: CartLineItem[];
@@ -10,6 +26,7 @@ interface OrderInvoicePreviewProps {
     string,
     { productName: string; type: PromoTypeCode; quantity: number; unit: string }[]
   >;
+  appliedGratisPromotions?: GratisPreviewItem[];
   subtotal: number;
   discount: number;
   total: number;
@@ -22,6 +39,7 @@ interface OrderInvoicePreviewProps {
 export function OrderInvoicePreview({
   cartLines,
   linePromotions = {},
+  appliedGratisPromotions = [],
   subtotal,
   discount,
   total,
@@ -69,12 +87,15 @@ export function OrderInvoicePreview({
       id: string;
       index: number;
       name: string;
+      tag?: string;
+      remark?: string;
       qty: number;
       unit: string;
       unitPrice: number;
       discount: number;
       totalPrice: number;
       isPromo?: boolean;
+      isGratis?: boolean;
     }[] = [];
 
     cartLines.forEach((item, itemIdx) => {
@@ -110,15 +131,39 @@ export function OrderInvoicePreview({
       });
     });
 
+    // Include applied Gratis promotions as dedicated bonus lines
+    appliedGratisPromotions.forEach((g, gIdx) => {
+      const currentMainIndex = mainIndex++;
+      rows.push({
+        id: `gratis-${g.id || gIdx}`,
+        index: currentMainIndex,
+        name: g.productName,
+        tag: g.type,
+        remark: g.remark || 'ផលតិផលលើកទឹកចិត្តការលក់ប្រចាំខែ 1,0,3 ឆ្នាំ 2026',
+        qty: g.quantity,
+        unit: g.unit || 'Case',
+        unitPrice: 0.0,
+        discount: 0.0,
+        totalPrice: 0.0,
+        isPromo: true,
+        isGratis: true,
+      });
+    });
+
     return rows;
-  }, [cartLines, linePromotions]);
+  }, [cartLines, linePromotions, appliedGratisPromotions]);
 
   const totalQuantity = useMemo(() => {
     return tableRows.reduce((sum, r) => sum + r.qty, 0);
   }, [tableRows]);
 
-  const invoiceNumber = 'SO-2026-0903-0821';
-  const orderDate = '03-Sep-2026 08:21 AM';
+  const totalDistinctItems = useMemo(() => {
+    const skuSet = new Set(
+      tableRows.map((r) => r.name.trim().toLowerCase().replace(/\s+/g, ' '))
+    );
+    return skuSet.size;
+  }, [tableRows]);
+
 
   return (
     <div
@@ -217,9 +262,6 @@ export function OrderInvoicePreview({
           <div className="sale-order-paper-header">
             <div>
               <h1 className="sale-order-main-title">Order Preview</h1>
-              <div className="sale-order-sub-meta">
-                <span>Invoice #{invoiceNumber}</span> • <span>{orderDate}</span>
-              </div>
             </div>
           </div>
 
@@ -243,7 +285,7 @@ export function OrderInvoicePreview({
               <div className="meta-info-row">
                 <span className="meta-row-label">Total Items:</span>
                 <span className="meta-row-value">
-                  {formatQuantity(totalQuantity)} ({formatQuantity(tableRows.length)} lines)
+                  {formatQuantity(totalQuantity)} ({formatQuantity(totalDistinctItems)} {totalDistinctItems === 1 ? 'item' : 'items'})
                 </span>
               </div>
             </div>
@@ -262,44 +304,72 @@ export function OrderInvoicePreview({
                 </tr>
               </thead>
               <tbody>
-                {tableRows.map((row) => (
-                  <tr
-                    key={row.id}
-                    className={`table-row-item ${row.isPromo ? 'sub-product-row' : 'main-product-row'}`}
-                  >
-                    <td className="so-td-item">
-                      <div className={`so-item-name ${row.isPromo ? 'is-sub-product-name' : ''}`}>
-                        {row.isPromo && <span className="sub-product-bullet">↳</span>}
-                        <span>{row.name}</span>
-                      </div>
-                    </td>
-                    <td className="so-td-qty">
-                      <span className="so-qty-num">{formatQuantity(row.qty)}</span>{' '}
-                      <span className="so-qty-unit">{row.unit}</span>
-                    </td>
-                    <td className="so-td-price">
-                      {row.isPromo ? (
-                        <span className="so-price-free">$0.0000</span>
-                      ) : (
-                        `$${formatMoney(row.unitPrice)}`
+                {tableRows.map((row, idx) => {
+                  const isFirstGratis = row.isGratis && (idx === 0 || !tableRows[idx - 1]?.isGratis);
+                  const showRemark = Boolean(
+                    row.remark && (idx === 0 || tableRows[idx - 1]?.remark !== row.remark)
+                  );
+                  return (
+                    <Fragment key={row.id}>
+                      {showRemark && (
+                        <tr className={`so-remark-header-row ${isFirstGratis ? 'is-first-gratis-row' : ''}`}>
+                          <td colSpan={5} className="so-remark-header-td">
+                            <span className="so-remark-header-text">{row.remark}</span>
+                          </td>
+                        </tr>
                       )}
-                    </td>
-                    <td className="so-td-discount">
-                      {row.discount > 0 ? (
-                        <span className="so-disc-active">-${formatMoney(row.discount)}</span>
-                      ) : (
-                        <span className="so-disc-zero">$0.0000</span>
-                      )}
-                    </td>
-                    <td className="so-td-total">
-                      {row.isPromo ? (
-                        <span className="so-total-free">$0.0000</span>
-                      ) : (
-                        `$${formatMoney(row.totalPrice)}`
-                      )}
-                    </td>
-                  </tr>
-                ))}
+                      <tr
+                        className={`table-row-item ${
+                          row.isGratis
+                            ? 'gratis-product-row'
+                            : row.isPromo
+                            ? 'sub-product-row'
+                            : 'main-product-row'
+                        } ${isFirstGratis && !showRemark ? 'is-first-gratis-row' : ''}`}
+                      >
+                        <td className="so-td-item">
+                          <div
+                            className={`so-item-name ${
+                              row.isGratis
+                                ? 'is-gratis-product-name'
+                                : row.isPromo
+                                ? 'is-sub-product-name'
+                                : ''
+                            }`}
+                          >
+                            {row.isPromo && !row.isGratis && <span className="sub-product-bullet">↳</span>}
+                            <span>{row.name}</span>
+                          </div>
+                        </td>
+                        <td className="so-td-qty">
+                          <span className="so-qty-num">{formatQuantity(row.qty)}</span>{' '}
+                          <span className="so-qty-unit">{row.unit}</span>
+                        </td>
+                        <td className="so-td-price">
+                          {row.isPromo ? (
+                            <span className="so-price-free">$0.00</span>
+                          ) : (
+                            `$${formatInvoiceMoney(row.unitPrice)}`
+                          )}
+                        </td>
+                        <td className="so-td-discount">
+                          {row.discount > 0 ? (
+                            <span className="so-disc-active">-${formatInvoiceMoney(row.discount)}</span>
+                          ) : (
+                            <span className="so-disc-zero">$0.00</span>
+                          )}
+                        </td>
+                        <td className="so-td-total">
+                          {row.isPromo ? (
+                            <span className="so-total-free">$0.00</span>
+                          ) : (
+                            `$${formatInvoiceMoney(row.totalPrice)}`
+                          )}
+                        </td>
+                      </tr>
+                    </Fragment>
+                  );
+                })}
               </tbody>
             </table>
           </div>
@@ -309,18 +379,18 @@ export function OrderInvoicePreview({
             <div className={`sale-order-summary-box ${isLandscape ? 'is-landscape-summary' : ''}`}>
               <div className="so-summary-row">
                 <span className="so-sum-label">Subtotal</span>
-                <span className="so-sum-val">${formatMoney(subtotal)}</span>
+                <span className="so-sum-val">${formatInvoiceMoney(subtotal)}</span>
               </div>
               <div className="so-summary-row">
                 <span className="so-sum-label">VAT</span>
-                <span className="so-sum-val">$0.0000</span>
+                <span className="so-sum-val">$0.00</span>
               </div>
 
               <div className="so-summary-divider" />
 
               <div className="so-grand-total-row">
                 <span className="so-grand-label">Total</span>
-                <span className="so-grand-val">${formatMoney(total)}</span>
+                <span className="so-grand-val">${formatInvoiceMoney(total)}</span>
               </div>
               <div className="so-grand-total-row so-khr-row">
                 <span className="so-grand-label">Total (KHR)</span>

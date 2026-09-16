@@ -2,46 +2,117 @@
 
 import React, { useState } from 'react';
 import { Customer } from './CustomersScreen';
+import { VisitLiveTimer } from './VisitLiveTimer';
 
 interface CustomerVisitMapScreenProps {
   customer: Customer;
   isCheckedIn?: boolean;
+  cartItemCount?: number;
+  hasCartItems?: boolean;
+  checkInStartTime?: number;
   onBack: () => void;
   onCheckIn: (customer: Customer) => void;
-  onCheckOut?: (customer: Customer) => void;
+  onCheckOut?: (customer: Customer, isProductive?: boolean) => void;
   onViewOutletDetail?: (customer: Customer) => void;
+  onCustomerCall?: (customer: Customer) => void;
+  onSalesCall?: (customer: Customer) => void;
+  onTrigger15MinAlert?: () => void;
+  onGoToOrder?: (customer: Customer) => void;
+  onGoToCustomer?: () => void;
 }
 
 export function CustomerVisitMapScreen({
   customer,
   isCheckedIn = false,
+  cartItemCount = 0,
+  hasCartItems = false,
+  checkInStartTime,
   onBack,
   onCheckIn,
   onCheckOut,
   onViewOutletDetail,
+  onCustomerCall,
+  onSalesCall,
+  onTrigger15MinAlert,
+  onGoToOrder,
+  onGoToCustomer,
 }: CustomerVisitMapScreenProps) {
   const [toast, setToast] = useState('');
   const [isConfirmCheckoutOpen, setIsConfirmCheckoutOpen] = useState(false);
+  const [isSelectShippingOpen, setIsSelectShippingOpen] = useState(false);
+  const [isOutOfRangeWarningOpen, setIsOutOfRangeWarningOpen] = useState(false);
+  const [isCheckoutOutOfRangeOpen, setIsCheckoutOutOfRangeOpen] = useState(false);
+  const [selectedAddressId, setSelectedAddressId] = useState<string>(() => {
+    const def = customer.shippingAddresses?.find((a) => a.isDefault);
+    return def?.id || customer.shippingAddresses?.[0]?.id || '';
+  });
   const [checkInStatus, setCheckInStatus] = useState<'idle' | 'loading' | 'success'>('idle');
   const [checkOutStatus, setCheckOutStatus] = useState<'idle' | 'loading' | 'success'>('idle');
 
+  const currentAddress = customer.shippingAddresses?.find((a) => a.id === selectedAddressId);
+  const baseDistanceMeters = currentAddress?.distanceMeters ?? customer.distanceMeters ?? 18;
+  const [simulatedDistance, setSimulatedDistance] = useState<number | null>(null);
+
+  const effectiveDistance = simulatedDistance !== null ? simulatedDistance : baseDistanceMeters;
+  const isWithinCheckInRange = effectiveDistance <= 30;
+  const isWithinCheckOutRange = effectiveDistance < 100;
+  const isProductive = hasCartItems || cartItemCount > 0;
+
+  const formatDistance = (meters: number) => {
+    if (meters >= 1000) {
+      const km = meters / 1000;
+      return Number.isInteger(km) ? `${km} km` : `${km.toFixed(1)} km`;
+    }
+    return `${meters} m`;
+  };
+
   function notify(msg: string) {
     setToast(msg);
-    setTimeout(() => setToast(''), 2000);
+    setTimeout(() => setToast(''), 2500);
   }
 
+  const triggerCheckInProcess = (chosenAddressId?: string) => {
+    setIsSelectShippingOpen(false);
+    const chosenAddress = customer.shippingAddresses?.find(
+      (a) => a.id === (chosenAddressId || selectedAddressId),
+    );
+    const updatedCustomer = chosenAddress
+      ? { ...customer, selectedShippingAddress: chosenAddress, address: chosenAddress.address }
+      : customer;
+
+    onCheckIn(updatedCustomer);
+  };
+
   const handleCheckInClick = () => {
-    setCheckInStatus('loading');
-    setTimeout(() => {
-      setCheckInStatus('success');
-      setTimeout(() => {
-        setCheckInStatus('idle');
-        onCheckIn(customer);
-      }, 1500);
-    }, 1400);
+    // If distance > 30m, check-in is strictly NOT allowed!
+    if (!isWithinCheckInRange) {
+      setIsOutOfRangeWarningOpen(true);
+      notify(`Check-in blocked: distance is ${formatDistance(effectiveDistance)} (> 30m max limit)`);
+      return;
+    }
+
+    // Distance <= 30m: Directly check in immediately without modal confirm
+    triggerCheckInProcess();
+  };
+
+  const handleProceedSelectShipping = () => {
+    const chosen = customer.shippingAddresses?.find((a) => a.id === selectedAddressId);
+    const chosenDist = simulatedDistance !== null ? simulatedDistance : (chosen?.distanceMeters ?? effectiveDistance);
+    if (chosenDist > 30) {
+      setIsOutOfRangeWarningOpen(true);
+      notify(`Check-in blocked: selected address is ${formatDistance(chosenDist)} (> 30m max limit)`);
+      return;
+    }
+    triggerCheckInProcess(selectedAddressId);
   };
 
   const handleCheckOutClick = () => {
+    // If distance >= 100m, check-out is strictly NOT allowed!
+    if (!isWithinCheckOutRange) {
+      setIsCheckoutOutOfRangeOpen(true);
+      notify(`Check-out blocked: distance is ${formatDistance(effectiveDistance)} (≥ 100m limit)`);
+      return;
+    }
     setIsConfirmCheckoutOpen(true);
   };
 
@@ -53,7 +124,7 @@ export function CustomerVisitMapScreen({
       setTimeout(() => {
         setCheckOutStatus('idle');
         if (onCheckOut) {
-          onCheckOut(customer);
+          onCheckOut(customer, isProductive);
         } else {
           onBack();
         }
@@ -286,36 +357,81 @@ export function CustomerVisitMapScreen({
             </div>
           </div>
 
-          {/* Staging Badge */}
+          {/* Staging Badge & GPS Toggle */}
           <div className="map-staging-badge-row">
             <span className="staging-pill-badge">STAGING</span>
+            {!isCheckedIn && (
+              <button
+                type="button"
+                className={`simulate-gps-btn ${
+                  effectiveDistance <= 30
+                    ? 'is-in-range'
+                    : effectiveDistance < 100
+                    ? 'is-mid-range'
+                    : 'is-out-range'
+                }`}
+                onClick={() => {
+                  let nextDist = 18;
+                  if (effectiveDistance <= 30) {
+                    nextDist = 45;
+                  } else if (effectiveDistance < 100) {
+                    nextDist = 120;
+                  } else if (effectiveDistance < 1000) {
+                    nextDist = 8000;
+                  } else {
+                    nextDist = 18;
+                  }
+                  setSimulatedDistance(nextDist);
+                  notify(
+                    `GPS simulated: ${formatDistance(nextDist)} (Check-in ${
+                      nextDist <= 30 ? '≤30m' : '>30m blocked'
+                    } • Check-out ${nextDist < 100 ? '<100m' : '≥100m blocked'})`,
+                  );
+                }}
+                title="Click to toggle GPS: 18m (≤30m) -> 45m (>30m) -> 120m (≥100m) -> 8km"
+              >
+                <span className="gps-dot" />
+                <span>GPS: {formatDistance(effectiveDistance)}</span>
+                <span className="gps-mode-tag">
+                  {effectiveDistance <= 30
+                    ? '≤30m'
+                    : effectiveDistance < 100
+                    ? '<100m'
+                    : '≥100m'}
+                </span>
+              </button>
+            )}
           </div>
 
           {/* Floating GPS Target / Recenter Button */}
-          <button
-            type="button"
-            className="map-recenter-btn"
-            onClick={() => notify('Recaptured GPS location')}
-            aria-label="Re-center GPS location"
-          >
-            <svg
-              width="22"
-              height="22"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="#1e293b"
-              strokeWidth="2.2"
-              strokeLinecap="round"
-              strokeLinejoin="round"
+          {!isCheckedIn && (
+            <button
+              type="button"
+              className="map-recenter-btn"
+              onClick={() => {
+                setSimulatedDistance(null);
+                notify(`GPS reset to actual location: ${formatDistance(baseDistanceMeters)}`);
+              }}
+              aria-label="Re-center GPS location"
             >
-              <circle cx="12" cy="12" r="7" />
-              <line x1="12" y1="1" x2="12" y2="5" />
-              <line x1="12" y1="19" x2="12" y2="23" />
-              <line x1="1" y1="12" x2="5" y2="12" />
-              <line x1="19" y1="12" x2="23" y2="12" />
-              <circle cx="12" cy="12" r="2" fill="#1e293b" />
-            </svg>
-          </button>
+              <svg
+                width="22"
+                height="22"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="#475569"
+                strokeWidth="2.2"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              >
+                <circle cx="12" cy="12" r="10" />
+                <line x1="22" y1="12" x2="18" y2="12" />
+                <line x1="6" y1="12" x2="2" y2="12" />
+                <line x1="12" y1="6" x2="12" y2="2" />
+                <line x1="12" y1="22" x2="12" y2="18" />
+              </svg>
+            </button>
+          )}
         </div>
 
         {/* Floating Route Distance & Time Badge */}
@@ -338,7 +454,7 @@ export function CustomerVisitMapScreen({
               <line x1="15" y1="15" x2="21" y2="21" />
               <line x1="4" y1="4" x2="9" y2="9" />
             </svg>
-            <span className="route-text-bold">8.1 km</span>
+            <span className="route-text-bold">{formatDistance(effectiveDistance)}</span>
           </div>
 
           <div className="route-info-item">
@@ -359,6 +475,27 @@ export function CustomerVisitMapScreen({
             <span className="route-text-bold">11 min</span>
           </div>
         </div>
+
+        {/* Back navigation button */}
+        <button
+          type="button"
+          className="map-back-btn"
+          onClick={onBack}
+          aria-label="Back to customer list"
+        >
+          <svg
+            width="22"
+            height="22"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="#1e293b"
+            strokeWidth="2.4"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+          >
+            <path d="m15 18-6-6 6-6" />
+          </svg>
+        </button>
       </div>
 
       {/* Bottom Sheet / Customer Card Info Panel */}
@@ -458,29 +595,42 @@ export function CustomerVisitMapScreen({
               <span>Unplanned</span>
             </div>
 
-            {/* Time & Distance */}
+            {/* Time, Live Timer & Distance with 30m Range Indicator */}
             <div className="map-meta-item">
-              <svg
-                width="16"
-                height="16"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="#64748b"
-                strokeWidth="2"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-              >
-                <circle cx="12" cy="12" r="10" />
-                <polyline points="12 6 12 12 16 14" />
-              </svg>
-              <span>08:59 AM</span>
-              <span className="map-dot-sep">•</span>
+              {isCheckedIn ? (
+                <>
+                  <VisitLiveTimer
+                    startTime={checkInStartTime || Date.now()}
+                    variant="map"
+                    onClick={onTrigger15MinAlert}
+                  />
+                  <span className="map-dot-sep">•</span>
+                </>
+              ) : (
+                <>
+                  <svg
+                    width="16"
+                    height="16"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="#64748b"
+                    strokeWidth="2"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                  >
+                    <circle cx="12" cy="12" r="10" />
+                    <polyline points="12 6 12 12 16 14" />
+                  </svg>
+                  <span>08:59 AM</span>
+                  <span className="map-dot-sep">•</span>
+                </>
+              )}
               <svg
                 width="15"
                 height="15"
                 viewBox="0 0 24 24"
                 fill="none"
-                stroke="#ef4444"
+                stroke={isWithinCheckInRange ? '#10b981' : '#ef4444'}
                 strokeWidth="2"
                 strokeLinecap="round"
                 strokeLinejoin="round"
@@ -488,7 +638,12 @@ export function CustomerVisitMapScreen({
                 <path d="M20 10c0 4.993-5.539 10.193-7.399 11.799a1 1 0 0 1-1.202 0C9.539 20.193 4 14.993 4 10a8 8 0 0 1 16 0" />
                 <circle cx="12" cy="10" r="3" />
               </svg>
-              <span className="map-distance-red">8.06 km</span>
+              <span className={isWithinCheckInRange ? 'map-distance-green' : 'map-distance-red'}>
+                {formatDistance(effectiveDistance)}
+              </span>
+              <span className={`range-status-badge ${isWithinCheckInRange ? 'is-valid' : 'is-invalid'}`}>
+                {isWithinCheckInRange ? '≤30m In Range' : '>30m Out of Range'}
+              </span>
             </div>
 
             {/* Customer name / outlet pin */}
@@ -510,32 +665,58 @@ export function CustomerVisitMapScreen({
             </div>
           </div>
 
-          {/* Right Action Button: Check In or Check Out */}
+          {/* Right Action Button: Check In / Check Out / Not Productive */}
           {isCheckedIn ? (
-            <button
-              type="button"
-              className="map-checkin-btn is-checkout"
-              onClick={handleCheckOutClick}
-              aria-label={`Check out from ${customer.name}`}
-            >
-              <div className="checkin-btn-content">
-                <svg
-                  width="22"
-                  height="22"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="#ffffff"
-                  strokeWidth="2.4"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                >
-                  <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" />
-                  <polyline points="16 17 21 12 16 7" />
-                  <line x1="21" y1="12" x2="9" y2="12" />
-                </svg>
-                <span className="checkin-btn-label">Check Out</span>
-              </div>
-            </button>
+            isProductive ? (
+              <button
+                type="button"
+                className="map-checkin-btn is-checkout"
+                onClick={handleCheckOutClick}
+                aria-label={`Check out from ${customer.name}`}
+              >
+                <div className="checkin-btn-content">
+                  <svg
+                    width="22"
+                    height="22"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="#ffffff"
+                    strokeWidth="2.4"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                  >
+                    <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" />
+                    <polyline points="16 17 21 12 16 7" />
+                    <line x1="21" y1="12" x2="9" y2="12" />
+                  </svg>
+                  <span className="checkin-btn-label">Check Out</span>
+                </div>
+              </button>
+            ) : (
+              <button
+                type="button"
+                className="map-checkin-btn is-not-productive"
+                onClick={handleCheckOutClick}
+                aria-label={`Check out as Not Productive from ${customer.name}`}
+              >
+                <div className="checkin-btn-content">
+                  <svg
+                    width="22"
+                    height="22"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="#ffffff"
+                    strokeWidth="2.4"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                  >
+                    <circle cx="12" cy="12" r="10" />
+                    <line x1="4.93" y1="4.93" x2="19.07" y2="19.07" />
+                  </svg>
+                  <span className="checkin-btn-label">Not Productive</span>
+                </div>
+              </button>
+            )
           ) : (
             <button
               type="button"
@@ -563,7 +744,7 @@ export function CustomerVisitMapScreen({
           )}
         </div>
 
-        {/* Bottom Outline Buttons: Direction & Outlet Detail */}
+        {/* Bottom Outline Buttons: Direction & Outlet Detail / Go back to Outlet */}
         <div className="map-bottom-actions-row">
           <button
             type="button"
@@ -577,11 +758,16 @@ export function CustomerVisitMapScreen({
             type="button"
             className="map-outline-btn"
             onClick={() => {
-              if (onViewOutletDetail) onViewOutletDetail(customer);
-              else notify(`Viewing outlet detail for ${customer.name}`);
+              if (onGoToOrder) {
+                onGoToOrder(customer);
+              } else if (onViewOutletDetail) {
+                onViewOutletDetail(customer);
+              } else {
+                notify(`Viewing outlet detail for ${customer.name}`);
+              }
             }}
           >
-            Outlet Detail
+            {isCheckedIn ? 'Go back to Outlet' : 'Outlet Detail'}
           </button>
         </div>
       </div>
@@ -650,6 +836,106 @@ export function CustomerVisitMapScreen({
         </div>
       )}
 
+      {/* Select Shipping Address Modal Dialog */}
+      {isSelectShippingOpen && (
+        <div
+          className="checkin-modal-backdrop"
+          role="dialog"
+          aria-modal="true"
+          aria-label="Select Shipping Address"
+          onClick={() => setIsSelectShippingOpen(false)}
+        >
+          <div
+            className="shipping-address-sheet-card"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="shipping-address-sheet-header">
+              <div className="shipping-sheet-title-group">
+                <div className="shipping-sheet-icon">
+                  <svg
+                    width="20"
+                    height="20"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="#b49a00"
+                    strokeWidth="2.2"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                  >
+                    <path d="M20 10c0 4.993-5.539 10.193-7.399 11.799a1 1 0 0 1-1.202 0C9.539 20.193 4 14.993 4 10a8 8 0 0 1 16 0" />
+                    <circle cx="12" cy="10" r="3" />
+                  </svg>
+                </div>
+                <div>
+                  <h3 className="shipping-sheet-title">Select Shipping Address</h3>
+                  <p className="shipping-sheet-subtitle">{customer.name} ({customer.code})</p>
+                </div>
+              </div>
+              <button
+                type="button"
+                className="shipping-sheet-close-btn"
+                onClick={() => setIsSelectShippingOpen(false)}
+                aria-label="Close"
+              >
+                ✕
+              </button>
+            </div>
+
+            <div className="shipping-addresses-list">
+              {customer.shippingAddresses?.map((addr, idx) => {
+                const isSelected = selectedAddressId === addr.id;
+                const addrDist = simulatedDistance !== null ? simulatedDistance : (addr.distanceMeters ?? effectiveDistance);
+                const addrInRange = addrDist <= 30;
+
+                return (
+                  <div
+                    key={addr.id || idx}
+                    className={`shipping-address-option-card ${isSelected ? 'is-selected' : ''}`}
+                    onClick={() => setSelectedAddressId(addr.id)}
+                    role="radio"
+                    aria-checked={isSelected}
+                    tabIndex={0}
+                  >
+                    <div className="shipping-radio-circle">
+                      {isSelected && <div className="shipping-radio-dot" />}
+                    </div>
+                    <div className="shipping-address-details">
+                      <div className="shipping-address-tags-row">
+                        <span className="shipping-address-label">Address #{idx + 1}</span>
+                        {addr.isDefault && (
+                          <span className="shipping-default-tag">Default</span>
+                        )}
+                        <span className={`shipping-dist-badge ${addrInRange ? 'is-in-range' : 'is-out-range'}`}>
+                          {formatDistance(addrDist)} • {addrInRange ? '≤30m' : '>30m'}
+                        </span>
+                      </div>
+                      <p className="shipping-address-text">{addr.address}</p>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+
+            <div className="shipping-sheet-actions">
+              <button
+                type="button"
+                className="shipping-sheet-cancel-btn"
+                onClick={() => setIsSelectShippingOpen(false)}
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                className="shipping-sheet-confirm-btn"
+                onClick={handleProceedSelectShipping}
+              >
+                Check In
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Confirm Check Out Confirmation Modal Dialog */}
       {isConfirmCheckoutOpen && (
         <div
@@ -663,26 +949,48 @@ export function CustomerVisitMapScreen({
             className="checkout-confirm-card"
             onClick={(e) => e.stopPropagation()}
           >
-            <div className="checkout-confirm-icon-wrap">
-              <svg
-                width="28"
-                height="28"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="#ef4444"
-                strokeWidth="2.2"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-              >
-                <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" />
-                <polyline points="16 17 21 12 16 7" />
-                <line x1="21" y1="12" x2="9" y2="12" />
-              </svg>
+            <div className={`checkout-confirm-icon-wrap ${isProductive ? '' : 'is-not-productive'}`}>
+              {isProductive ? (
+                <svg
+                  width="28"
+                  height="28"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="#ef4444"
+                  strokeWidth="2.2"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                >
+                  <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" />
+                  <polyline points="16 17 21 12 16 7" />
+                  <line x1="21" y1="12" x2="9" y2="12" />
+                </svg>
+              ) : (
+                <svg
+                  width="28"
+                  height="28"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="#ef4444"
+                  strokeWidth="2.2"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                >
+                  <circle cx="12" cy="12" r="10" />
+                  <line x1="4.93" y1="4.93" x2="19.07" y2="19.07" />
+                </svg>
+              )}
             </div>
 
-            <h3 className="checkout-confirm-title">Confirm Check Out</h3>
+            <h3 className="checkout-confirm-title">
+              {isProductive ? 'Confirm Check Out' : 'Not Productive Visit'}
+            </h3>
             <p className="checkout-confirm-desc">
-              Are you sure you want to check out from <span className="checkout-customer-highlight">{customer.name}</span>?
+              {isProductive ? (
+                <>Are you sure you want to check out from <span className="checkout-customer-highlight">{customer.name}</span>?</>
+              ) : (
+                <>No products were added to the cart during this visit. Proceed to check out as <span className="checkout-customer-highlight">Not Productive</span> from <span className="checkout-customer-highlight">{customer.name}</span>?</>
+              )}
             </p>
 
             <div className="checkout-confirm-actions">
@@ -695,10 +1003,10 @@ export function CustomerVisitMapScreen({
               </button>
               <button
                 type="button"
-                className="checkout-confirm-btn"
+                className={`checkout-confirm-btn ${isProductive ? '' : 'is-not-productive'}`}
                 onClick={handleProceedCheckOut}
               >
-                Check Out
+                {isProductive ? 'Check Out' : 'Not Productive'}
               </button>
             </div>
           </div>
@@ -737,7 +1045,7 @@ export function CustomerVisitMapScreen({
                     />
                   </svg>
                 </div>
-                <h3 className="checkin-modal-title">Check Out...</h3>
+                <h3 className="checkin-modal-title">{isProductive ? 'Check Out...' : 'Checking out...'}</h3>
               </div>
             )}
 
@@ -760,11 +1068,226 @@ export function CustomerVisitMapScreen({
                   </svg>
                 </div>
                 <div className="checkin-modal-success-text">
-                  <h3 className="checkin-modal-title">Check-out</h3>
+                  <h3 className="checkin-modal-title">{isProductive ? 'Check-out' : 'Not Productive'}</h3>
                   <h3 className="checkin-modal-title">Successful</h3>
                 </div>
               </div>
             )}
+          </div>
+        </div>
+      )}
+
+      {/* Out of Range Warning Modal (Distance > 30m) */}
+      {isOutOfRangeWarningOpen && (
+        <div
+          className="checkin-modal-backdrop"
+          role="dialog"
+          aria-modal="true"
+          aria-label="Location Out of Range"
+          onClick={() => setIsOutOfRangeWarningOpen(false)}
+        >
+          <div
+            className="out-of-range-modal-card"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="out-of-range-icon-wrap">
+              <svg
+                width="30"
+                height="30"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="#ef4444"
+                strokeWidth="2.2"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              >
+                <path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z" />
+                <line x1="12" y1="9" x2="12" y2="13" />
+                <line x1="12" y1="17" x2="12.01" y2="17" />
+              </svg>
+            </div>
+
+            <h3 className="out-of-range-title">Cannot Check In</h3>
+            
+            <p className="out-of-range-desc">
+              Your location is <span className="out-of-range-dist-text">{formatDistance(effectiveDistance)}</span> away from this customer. Check-in is only allowed within <span className="out-of-range-limit-text">30 meters</span>.
+            </p>
+
+            <div className="out-of-range-stats-box">
+              <div className="out-of-range-stat-row">
+                <span className="stat-label">Current Distance:</span>
+                <span className="stat-val is-out">{formatDistance(effectiveDistance)}</span>
+              </div>
+              <div className="out-of-range-stat-row">
+                <span className="stat-label">Maximum Allowed:</span>
+                <span className="stat-val is-limit">30 m</span>
+              </div>
+            </div>
+
+            <div className="out-of-range-call-section">
+              <button
+                type="button"
+                className="out-of-range-action-btn is-customer-call"
+                onClick={() => {
+                  setIsOutOfRangeWarningOpen(false);
+                  if (onCustomerCall) {
+                    onCustomerCall(customer);
+                  } else if (onViewOutletDetail) {
+                    onViewOutletDetail(customer);
+                  }
+                }}
+                aria-label={`Start Customer Call with ${customer.name}`}
+              >
+                <div className="action-btn-left">
+                  <div className="action-btn-icon-box">
+                    <svg
+                      width="18"
+                      height="18"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="#ffffff"
+                      strokeWidth="2.2"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                    >
+                      <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z" />
+                    </svg>
+                  </div>
+                  <div className="action-btn-text-group">
+                    <span className="action-btn-title">Customer Call</span>
+                    <span className="action-btn-sub">Direct to Order Screen</span>
+                  </div>
+                </div>
+                <svg
+                  width="18"
+                  height="18"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="#ffffff"
+                  strokeWidth="2.4"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  className="action-btn-arrow"
+                >
+                  <polyline points="9 18 15 12 9 6" />
+                </svg>
+              </button>
+
+              <button
+                type="button"
+                className="out-of-range-action-btn is-sale-call"
+                onClick={() => {
+                  setIsOutOfRangeWarningOpen(false);
+                  if (onSalesCall) {
+                    onSalesCall(customer);
+                  } else if (onViewOutletDetail) {
+                    onViewOutletDetail(customer);
+                  }
+                }}
+                aria-label={`Start Sale Call with ${customer.name}`}
+              >
+                <div className="action-btn-left">
+                  <div className="action-btn-icon-box">
+                    <svg
+                      width="18"
+                      height="18"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="#ffffff"
+                      strokeWidth="2.2"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                    >
+                      <path d="M3 18v-6a9 9 0 0 1 18 0v6" />
+                      <path d="M21 19a2 2 0 0 1-2 2h-1a2 2 0 0 1-2-2v-3a2 2 0 0 1 2-2h3zM3 19a2 2 0 0 0 2 2h1a2 2 0 0 0 2-2v-3a2 2 0 0 0-2-2H3z" />
+                    </svg>
+                  </div>
+                  <div className="action-btn-text-group">
+                    <span className="action-btn-title">Sale Call</span>
+                    <span className="action-btn-sub">Direct to Order Screen</span>
+                  </div>
+                </div>
+                <svg
+                  width="18"
+                  height="18"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="#ffffff"
+                  strokeWidth="2.4"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  className="action-btn-arrow"
+                >
+                  <polyline points="9 18 15 12 9 6" />
+                </svg>
+              </button>
+            </div>
+
+            <button
+              type="button"
+              className="out-of-range-cancel-btn"
+              onClick={() => setIsOutOfRangeWarningOpen(false)}
+            >
+              Cancel
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* Out of Range Checkout Warning Modal (Distance >= 100m) */}
+      {isCheckoutOutOfRangeOpen && (
+        <div
+          className="checkin-modal-backdrop"
+          role="dialog"
+          aria-modal="true"
+          aria-label="Checkout Distance Out of Range"
+          onClick={() => setIsCheckoutOutOfRangeOpen(false)}
+        >
+          <div
+            className="out-of-range-modal-card"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="out-of-range-icon-wrap">
+              <svg
+                width="30"
+                height="30"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="#ef4444"
+                strokeWidth="2.2"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              >
+                <circle cx="12" cy="12" r="10" />
+                <line x1="12" y1="8" x2="12" y2="12" />
+                <line x1="12" y1="16" x2="12.01" y2="16" />
+              </svg>
+            </div>
+
+            <h3 className="out-of-range-title">Cannot Check Out</h3>
+
+            <p className="out-of-range-desc">
+              Your current location is <span className="out-of-range-dist-text">{formatDistance(effectiveDistance)}</span> away from this customer. Check-out is only allowed within <span className="out-of-range-limit-text">100 meters</span>.
+            </p>
+
+            <div className="out-of-range-stats-box">
+              <div className="out-of-range-stat-row">
+                <span className="stat-label">Current Distance:</span>
+                <span className="stat-val is-out">{formatDistance(effectiveDistance)}</span>
+              </div>
+              <div className="out-of-range-stat-row">
+                <span className="stat-label">Maximum Allowed:</span>
+                <span className="stat-val is-limit">100 m</span>
+              </div>
+            </div>
+
+            <button
+              type="button"
+              className="out-of-range-dismiss-btn"
+              onClick={() => setIsCheckoutOutOfRangeOpen(false)}
+            >
+              Got It
+            </button>
           </div>
         </div>
       )}
