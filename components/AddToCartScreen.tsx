@@ -3,6 +3,7 @@
 import { useMemo, useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { TransactionTypeTag } from '@/components/ui/transaction-type-tag';
+import { DeviceStatusBar } from './DeviceStatusBar';
 import { formatMoney, formatQuantity } from '@/lib/format-number';
 import { getAutomaticPromotions } from '@/lib/automatic-promotions';
 
@@ -362,16 +363,8 @@ export function AddToCartScreen({
         }
       }}
     >
-      {/* Top Device Status Bar */}
-      <div className="device-status" aria-label="Device status">
-        <span>9:20</span>
-        <img className="camera-cutout" src="/assets/camera-cutout.svg" alt="" />
-        <div className="device-icons" aria-hidden="true">
-          <img src="/assets/wifi.svg" alt="" />
-          <img src="/assets/signal.svg" alt="" />
-          <img className="battery" src="/assets/battery.svg" alt="" />
-        </div>
-      </div>
+      {/* Top Device Status Bar with Global Settings */}
+      <DeviceStatusBar time="9:20" />
 
       {/* Screen Navigation Header */}
       <div className="cart-screen-nav">

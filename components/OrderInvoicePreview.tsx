@@ -3,6 +3,7 @@
 import { useMemo, useState, useEffect, Fragment } from 'react';
 import { CartLineItem, PromoTypeCode } from './CartScreen';
 import { formatQuantity } from '@/lib/format-number';
+import { DeviceStatusBar } from '@/components/DeviceStatusBar';
 
 const invoiceMoneyFormatter = new Intl.NumberFormat('en-US', {
   minimumFractionDigits: 2,
@@ -187,15 +188,11 @@ export function OrderInvoicePreview({
       aria-label="Order Invoice Preview"
     >
       {/* Device Status Bar */}
-      <div className={`device-status ${isLandscape ? 'is-landscape-status' : ''}`} aria-label="Device status">
-        <span>8:21</span>
-        {!isLandscape && <img className="camera-cutout" src="/assets/camera-cutout.svg" alt="" />}
-        <div className="device-icons" aria-hidden="true">
-          <img src="/assets/wifi.svg" alt="" />
-          <img src="/assets/signal.svg" alt="" />
-          <img className="battery" src="/assets/battery.svg" alt="" />
-        </div>
-      </div>
+      <DeviceStatusBar
+        className={isLandscape ? 'is-landscape-status' : ''}
+        time="8:21"
+        showCameraCutout={!isLandscape}
+      />
 
       {/* Navigation Top Bar */}
       <header className="invoice-nav-header">

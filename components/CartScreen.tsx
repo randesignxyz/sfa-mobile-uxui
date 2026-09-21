@@ -1,11 +1,13 @@
 'use client';
 
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { TransactionTypeTag, TransactionTypeBadge } from '@/components/ui/transaction-type-tag';
 import { PriceTier, ProductItem } from './AddToCartScreen';
 import { OrderInvoicePreview } from './OrderInvoicePreview';
+import { DeviceStatusBar } from './DeviceStatusBar';
+import { useSettings } from '@/context/SettingsContext';
 import { formatMoney, formatQuantity } from '@/lib/format-number';
 import { getAutomaticPromotions } from '@/lib/automatic-promotions';
 
@@ -422,6 +424,50 @@ export type PromoTypeCode =
 
 export type PromoDetailTab = 'Special Promotion' | 'Gratis';
 
+export interface PromoTypeCatalogItem {
+  code: PromoTypeCode;
+  name: string;
+  desc: string;
+}
+
+export const PROMO_CATALOG_TYPES: Record<PromoDetailTab, PromoTypeCatalogItem[]> = {
+  'Special Promotion': [
+    { code: 'FOC', name: 'Free of Charge', desc: 'Bonus items attached to order' },
+    { code: 'TDL', name: 'Trade Discount Line', desc: 'Line item trade discount' },
+    { code: 'ECT', name: 'Empty Container', desc: 'Returnable container discount' },
+    { code: 'TDO', name: 'Trade Discount Order', desc: 'Order-level trade discount' },
+    { code: 'TDP', name: 'Trade Discount Product', desc: 'Product-level trade discount' },
+    { code: 'TRA', name: 'Trade Allowance', desc: 'General trade promotion allowance' },
+  ],
+  Gratis: [
+    { code: 'TDI', name: 'Trade Discount Invoice', desc: 'Invoice gratis promotion' },
+    { code: 'TDD', name: 'Trade Discount Delivery', desc: 'Delivery reward gratis allowance' },
+    { code: 'RSD', name: 'Retail Special Discount', desc: 'Special retail incentive' },
+  ],
+};
+
+export interface PromoDisplaySettings {
+  categories: {
+    'Special Promotion': boolean;
+    Gratis: boolean;
+  };
+  types: {
+    'Special Promotion': PromoTypeCode[];
+    Gratis: PromoTypeCode[];
+  };
+}
+
+export const DEFAULT_PROMO_SETTINGS: PromoDisplaySettings = {
+  categories: {
+    'Special Promotion': true,
+    Gratis: true,
+  },
+  types: {
+    'Special Promotion': ['FOC', 'TDL', 'ECT'],
+    Gratis: ['TDI', 'TDD', 'RSD'],
+  },
+};
+
 export const PROMO_TAB_TYPES: Record<PromoDetailTab, PromoTypeCode[]> = {
   'Special Promotion': ['FOC', 'TDL', 'ECT'],
   Gratis: ['TDI', 'TDD', 'RSD'],
@@ -565,7 +611,24 @@ export function CartScreen({
   const [selectedPromoProduct, setSelectedPromoProduct] = useState<ProductItem | null>(null);
   const [searchPromoQuery, setSearchPromoQuery] = useState('');
   const [promoCategory, setPromoCategory] = useState<'All' | 'Vital' | 'Mee Chiet' | 'OM'>('All');
-  const [promoDetailTab, setPromoDetailTab] = useState<PromoDetailTab>('Special Promotion');
+  const {
+    promoSettings,
+    visibleCategories,
+    promoDetailsTitle,
+    openGlobalSettings,
+  } = useSettings();
+
+  const [promoDetailTab, setPromoDetailTab] = useState<PromoDetailTab>(() => {
+    return visibleCategories[0] || 'Special Promotion';
+  });
+
+  // Keep promoDetailTab aligned with available categories
+  useEffect(() => {
+    if (!visibleCategories.includes(promoDetailTab) && visibleCategories.length > 0) {
+      setPromoDetailTab(visibleCategories[0]);
+    }
+  }, [visibleCategories, promoDetailTab]);
+
   const [promoQuantities, setPromoQuantities] = useState<Record<PromoTypeCode, number>>({
     FOC: 0,
     TDL: 0,
@@ -674,7 +737,7 @@ export function CartScreen({
 
   const handleSelectPromoProduct = (product: ProductItem) => {
     setSelectedPromoProduct(product);
-    setPromoDetailTab('Special Promotion');
+    setPromoDetailTab(visibleCategories[0] || 'Special Promotion');
 
     // If any selected line already has confirmed promotions, load them; otherwise start with 0 (no auto-select)
     const targetId =
@@ -726,6 +789,13 @@ export function CartScreen({
     setPromoQuantities((prev) => {
       const current = prev[type] || 0;
       const next = Math.max(0, current + delta);
+      return { ...prev, [type]: next };
+    });
+  };
+
+  const handleSetPromoQty = (type: PromoTypeCode, newQty: number) => {
+    setPromoQuantities((prev) => {
+      const next = Math.max(0, Math.floor(newQty || 0));
       return { ...prev, [type]: next };
     });
   };
@@ -988,16 +1058,8 @@ export function CartScreen({
 
   return (
     <div className="cart-view-screen" aria-label="Shopping Cart">
-      {/* Top Device Status Bar */}
-      <div className="device-status" aria-label="Device status">
-        <span>8:21</span>
-        <img className="camera-cutout" src="/assets/camera-cutout.svg" alt="" />
-        <div className="device-icons" aria-hidden="true">
-          <img src="/assets/wifi.svg" alt="" />
-          <img src="/assets/signal.svg" alt="" />
-          <img className="battery" src="/assets/battery.svg" alt="" />
-        </div>
-      </div>
+      {/* Top Device Status Bar with Global Settings button */}
+      <DeviceStatusBar time="8:21" />
 
       {/* Screen Navigation Header */}
       <div className="cart-view-nav">
@@ -1601,7 +1663,7 @@ export function CartScreen({
             className="select-promo-modal-sheet promo-details-sheet"
             onClick={(e) => e.stopPropagation()}
             role="dialog"
-            aria-label="Promotion Details"
+            aria-label={promoDetailsTitle}
           >
             <div className="sheet-drag-handle" />
 
@@ -1630,124 +1692,132 @@ export function CartScreen({
                 </svg>
               </button>
 
-              <h2 className="promo-details-title-text">Promotion Details</h2>
+              <h2 className="promo-details-title-text">{promoDetailsTitle}</h2>
 
-              <button
-                type="button"
-                className="modal-close-btn"
-                onClick={() => {
-                  setIsPromoDetailsModalOpen(false);
-                  setIsManualPromoMode(false);
-                }}
-                aria-label="Close"
-              >
-                <svg
-                  width="20"
-                  height="20"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="#52525b"
-                  strokeWidth="2"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
+              <div className="promo-details-header-actions">
+                <button
+                  type="button"
+                  className="modal-close-btn"
+                  onClick={() => {
+                    setIsPromoDetailsModalOpen(false);
+                    setIsManualPromoMode(false);
+                  }}
+                  aria-label="Close"
                 >
-                  <line x1="18" y1="6" x2="6" y2="18" />
-                  <line x1="6" y1="6" x2="18" y2="18" />
-                </svg>
-              </button>
+                  <svg
+                    width="20"
+                    height="20"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="#52525b"
+                    strokeWidth="2"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                  >
+                    <line x1="18" y1="6" x2="6" y2="18" />
+                    <line x1="6" y1="6" x2="18" y2="18" />
+                  </svg>
+                </button>
+              </div>
             </div>
 
             <div className="modal-header-divider" />
 
-            {/* Promotion Details Category Tabs */}
-            <div className="promo-details-tabs-bar" role="tablist" aria-label="Promotion categories">
-              {(['Special Promotion', 'Gratis'] as PromoDetailTab[]).map((tab) => (
-                <button
-                  key={tab}
-                  type="button"
-                  role="tab"
-                  aria-selected={promoDetailTab === tab}
-                  className={`promo-details-tab-btn ${
-                    promoDetailTab === tab ? 'is-active' : ''
-                  }`}
-                  onClick={() => setPromoDetailTab(tab)}
-                >
-                  {tab}
-                </button>
-              ))}
-            </div>
+            {/* Promotion Details Category Tabs (Only when > 1 category is active) */}
+            {visibleCategories.length > 1 && (
+              <div className="promo-details-tabs-bar" role="tablist" aria-label="Promotion categories">
+                {visibleCategories.map((tab) => (
+                  <button
+                    key={tab}
+                    type="button"
+                    role="tab"
+                    aria-selected={promoDetailTab === tab}
+                    className={`promo-details-tab-btn ${
+                      promoDetailTab === tab ? 'is-active' : ''
+                    }`}
+                    onClick={() => setPromoDetailTab(tab)}
+                  >
+                    {tab}
+                  </button>
+                ))}
+              </div>
+            )}
 
             {/* Promotion Types Stepper List for Selected Tab */}
             <div className="promo-types-list">
-              {PROMO_TAB_TYPES[promoDetailTab].map((type) => {
-                const qty = promoQuantities[type] || 0;
-                const isActive = qty > 0;
-
-                return (
-                  <div
-                    key={type}
-                    className={`promo-type-card ${
-                      isActive ? 'is-active' : ''
-                    }`}
-                  >
-                    <TransactionTypeTag
-                      code={type}
-                      active={isActive}
-                      onClick={() => handleUpdatePromoQty(type, qty === 0 ? 1 : -qty)}
-                      ariaLabel={`Toggle ${type}`}
-                    />
-
-                    <div className="promo-stepper-wrap">
-                      <div className="promo-stepper-control">
-                        <button
-                          type="button"
-                          className="promo-step-btn"
-                          onClick={() => handleUpdatePromoQty(type, -1)}
-                          disabled={qty === 0}
-                          aria-label={`Decrease ${type}`}
-                        >
-                          <svg
-                            width="14"
-                            height="14"
-                            viewBox="0 0 24 24"
-                            fill="none"
-                            stroke={qty > 0 ? '#b49a00' : '#9ca3af'}
-                            strokeWidth="2.5"
-                            strokeLinecap="round"
-                          >
-                            <line x1="5" y1="12" x2="19" y2="12" />
-                          </svg>
-                        </button>
-
-                        <span className="promo-step-qty">{formatQuantity(qty)}</span>
-
-                        <button
-                          type="button"
-                          className="promo-step-btn"
-                          onClick={() => handleUpdatePromoQty(type, 1)}
-                          aria-label={`Increase ${type}`}
-                        >
-                          <svg
-                            width="14"
-                            height="14"
-                            viewBox="0 0 24 24"
-                            fill="none"
-                            stroke="#b49a00"
-                            strokeWidth="2.5"
-                            strokeLinecap="round"
-                            strokeLinejoin="round"
-                          >
-                            <line x1="12" y1="5" x2="12" y2="19" />
-                            <line x1="5" y1="12" x2="19" y2="12" />
-                          </svg>
-                        </button>
-                      </div>
-
-                      <span className="promo-unit-label">Case</span>
-                    </div>
+              {(promoSettings.types[promoDetailTab] || []).length === 0 ? (
+                <div className="promo-empty-types-state">
+                  <div className="promo-empty-icon-wrap">
+                    <svg
+                      width="22"
+                      height="22"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="#a1a1aa"
+                      strokeWidth="2"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                    >
+                      <circle cx="12" cy="12" r="10" />
+                      <line x1="12" y1="8" x2="12" y2="12" />
+                      <line x1="12" y1="16" x2="12.01" y2="16" />
+                    </svg>
                   </div>
-                );
-              })}
+                  <p className="promo-empty-title">No types enabled</p>
+                  <p className="promo-empty-sub">
+                    Enable types for {promoDetailTab} in settings.
+                  </p>
+                  <button
+                    type="button"
+                    className="promo-manage-types-btn"
+                    onClick={() => openGlobalSettings('promotions')}
+                  >
+                    Configure Types
+                  </button>
+                </div>
+              ) : (
+                (promoSettings.types[promoDetailTab] || []).map((type) => {
+                  const qty = promoQuantities[type] || 0;
+                  const isActive = qty > 0;
+
+                  return (
+                    <div
+                      key={type}
+                      className={`promo-type-card ${
+                        isActive ? 'is-active' : ''
+                      }`}
+                    >
+                      <TransactionTypeTag
+                        code={type}
+                        active={isActive}
+                        onClick={() => handleSetPromoQty(type, qty === 0 ? 1 : 0)}
+                        ariaLabel={`Toggle ${type}`}
+                      />
+
+                      <div className="promo-qty-input-wrap">
+                        <input
+                          type="text"
+                          inputMode="numeric"
+                          pattern="[0-9]*"
+                          className="promo-qty-input"
+                          value={qty === 0 ? '' : qty}
+                          placeholder="0"
+                          onChange={(e) => {
+                            const cleaned = e.target.value.replace(/[^0-9]/g, '');
+                            const val = cleaned === '' ? 0 : parseInt(cleaned, 10);
+                            handleSetPromoQty(type, isNaN(val) ? 0 : val);
+                          }}
+                          onFocus={(e) => e.target.select()}
+                          aria-label={`Quantity for ${type}`}
+                        />
+                        <span className="promo-unit-label">
+                          {selectedPromoProduct?.unit || 'Case'}
+                        </span>
+                      </div>
+                    </div>
+                  );
+                })
+              )}
             </div>
 
             {/* Confirm Promotion CTA */}
@@ -1974,7 +2044,32 @@ export function CartScreen({
                       <p className="gratis-remark-line">{promotion.remark || 'ផលតិផលលើកទឹកចិត្តការលក់ប្រចាំខែ 1,0,3 ឆ្នាំ 2026'}</p>
                       <div className="gratis-item-row">
                         <span className="gratis-item-title">{promotion.productName}</span>
-                        <span className="gratis-item-qty">+{formatQuantity(promotion.quantity)} {promotion.unit}</span>
+                        <div className="gratis-qty-input-wrap">
+                          <span className="gratis-qty-prefix">+</span>
+                          <input
+                            type="text"
+                            inputMode="numeric"
+                            pattern="[0-9]*"
+                            className="gratis-qty-input"
+                            value={appliedGratisQuantities[promotion.id] ?? promotion.quantity}
+                            onChange={(e) => {
+                              const cleaned = e.target.value.replace(/[^0-9]/g, '');
+                              const parsed = cleaned === '' ? 0 : parseInt(cleaned, 10);
+                              const newQty = isNaN(parsed) ? 0 : parsed;
+                              const nextQuantities = {
+                                ...appliedGratisQuantities,
+                                [promotion.id]: newQty,
+                              };
+                              setAppliedGratisQuantities(nextQuantities);
+                              if (onUpdateAppliedGratisQuantities) {
+                                onUpdateAppliedGratisQuantities(nextQuantities);
+                              }
+                            }}
+                            onFocus={(e) => e.target.select()}
+                            aria-label={`Quantity for ${promotion.productName}`}
+                          />
+                          <span className="gratis-unit-label">{promotion.unit}</span>
+                        </div>
                         <TransactionTypeBadge code={promotion.type} />
                       </div>
                     </div>
@@ -2002,10 +2097,11 @@ export function CartScreen({
                         className={`scheme-apply-btn ${isApplied ? 'is-applied' : ''}`}
                         onClick={() => {
                           if (isApplied) return;
+                          const currentVal = appliedGratisQuantities[promotion.id] ?? promotion.quantity;
                           const nextIds = [...appliedGratisIds, promotion.id];
                           const nextQuantities = {
                             ...appliedGratisQuantities,
-                            [promotion.id]: promotion.quantity,
+                            [promotion.id]: currentVal,
                           };
                           setAppliedGratisIds(nextIds);
                           setAppliedGratisQuantities(nextQuantities);

@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { Customer } from './CustomersScreen';
+import { DeviceStatusBar } from '@/components/DeviceStatusBar';
 
 interface CustomerVisitMapScreenProps {
   customer: Customer;
@@ -358,15 +359,14 @@ export function CustomerVisitMapScreen({
         {/* Top Floating Controls */}
         <div className="map-top-bar">
           {/* Status Bar */}
-          <div className="device-status map-status-bar" aria-label="Device status">
-            <span className="map-status-time">8:59 <span className="map-nav-arrow">↗</span></span>
-            <img className="camera-cutout" src="/assets/camera-cutout.svg" alt="" />
-            <div className="device-icons" aria-hidden="true">
-              <img src="/assets/signal.svg" alt="" />
-              <img src="/assets/wifi.svg" alt="" />
-              <img className="battery" src="/assets/battery.svg" alt="" />
-            </div>
-          </div>
+          <DeviceStatusBar
+            className="map-status-bar"
+            time={
+              <span className="map-status-time">
+                8:59 <span className="map-nav-arrow">↗</span>
+              </span>
+            }
+          />
 
 
 

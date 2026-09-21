@@ -9,6 +9,9 @@ import { CustomersScreen, Customer, initialCustomers } from '@/components/Custom
 import { VisitLiveTimer } from '@/components/VisitLiveTimer';
 import { CustomerModuleViews } from '@/components/CustomerModuleViews';
 import { formatMoney, formatQuantity } from '@/lib/format-number';
+import { SettingsProvider, useSettings } from '@/context/SettingsContext';
+import { DeviceStatusBar } from '@/components/DeviceStatusBar';
+import { GlobalSettingsModal } from '@/components/GlobalSettingsModal';
 
 type Category = 'All' | 'Vital' | 'Mee Chiet' | 'OM';
 export type PrimaryTab =
@@ -154,21 +157,6 @@ const initialProductTiers: Record<number, Record<PriceTier, number>> = {
   7: { STD: 0, TDD: 0, PROMO: 0, FOC: 0 },
 };
 
-/** Device status bar */
-function DeviceStatusBar() {
-  return (
-    <div className="device-status" aria-label="Device status">
-      <span>7:51</span>
-      <img className="camera-cutout" src="/assets/camera-cutout.svg" alt="" />
-      <div className="device-icons" aria-hidden="true">
-        <img src="/assets/wifi.svg" alt="" />
-        <img src="/assets/signal.svg" alt="" />
-        <img className="battery" src="/assets/battery.svg" alt="" />
-      </div>
-    </div>
-  );
-}
-
 /** Product Card Item matching the cards design with red quantity badge */
 function ProductCard({
   product,
@@ -250,7 +238,14 @@ function ProductCard({
   );
 }
 
-export default function Home() {
+function HomeContent() {
+  const {
+    isLandscape,
+    setIsLandscape,
+    deviceModel,
+    setDeviceModel,
+    openGlobalSettings,
+  } = useSettings();
   const [activeNavTab, setActiveNavTab] = useState<'Home' | 'Visit' | 'Order' | 'Customer'>('Customer');
   const [selectedCustomer, setSelectedCustomer] = useState<Customer>(initialCustomers[4]); // Bun Sophear
   const [primaryTab, setPrimaryTab] = useState<PrimaryTab>('Sales');
@@ -268,8 +263,6 @@ export default function Home() {
   const [toast, setToast] = useState('');
   const [selectedProductForCart, setSelectedProductForCart] = useState<Product | null>(null);
   const [wasEditingFromCart, setWasEditingFromCart] = useState(false);
-  const [isLandscape, setIsLandscape] = useState(false);
-  const [deviceModel, setDeviceModel] = useState<'iphone-16-pro-max' | 'iphone-13'>('iphone-16-pro-max');
   const [checkedInCustomerIds, setCheckedInCustomerIds] = useState<string[]>([]);
   const [checkInStartTimes, setCheckInStartTimes] = useState<Record<string, number>>({});
   const [activeMapCustomer, setActiveMapCustomer] = useState<Customer | null>(null);
@@ -785,6 +778,29 @@ export default function Home() {
           </svg>
           <span>{isLandscape ? 'Landscape' : 'Portrait'}</span>
         </button>
+
+        <button
+          type="button"
+          className="device-settings-toolbar-btn"
+          onClick={() => openGlobalSettings()}
+          title="Open Global Settings"
+          aria-label="Open Global Settings"
+        >
+          <svg
+            width="15"
+            height="15"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="2.2"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+          >
+            <path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z" />
+            <circle cx="12" cy="12" r="3" />
+          </svg>
+          <span>Settings</span>
+        </button>
       </div>
 
       <section
@@ -827,7 +843,7 @@ export default function Home() {
           >
             {/* Main List Screen Header */}
             <header className="app-header-sales">
-              <DeviceStatusBar />
+              <DeviceStatusBar time="7:51" />
 
               {/* Customer Title Row with STAGING badge */}
               <div className="main-nav-bar">
@@ -1247,10 +1263,20 @@ export default function Home() {
           </div>
         )}
 
+        <GlobalSettingsModal />
+
         <footer className="home-indicator" aria-hidden="true">
           <span />
         </footer>
       </section>
     </main>
+  );
+}
+
+export default function Home() {
+  return (
+    <SettingsProvider>
+      <HomeContent />
+    </SettingsProvider>
   );
 }

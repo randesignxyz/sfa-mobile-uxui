@@ -3,6 +3,7 @@
 import { useState, useMemo, useRef, useEffect } from 'react';
 import { CustomerVisitMapScreen } from './CustomerVisitMapScreen';
 import { VisitLiveTimer } from './VisitLiveTimer';
+import { DeviceStatusBar } from './DeviceStatusBar';
 import { formatQuantity } from '@/lib/format-number';
 import type { PromotionScheme } from './CartScreen';
 
@@ -751,15 +752,7 @@ export function CustomersScreen({
       {/* Top Header Section */}
       <header className="customers-app-header">
         {/* Device Status Bar */}
-        <div className="device-status" aria-label="Device status">
-          <span>3:09</span>
-          <img className="camera-cutout" src="/assets/camera-cutout.svg" alt="" />
-          <div className="device-icons" aria-hidden="true">
-            <img src="/assets/wifi.svg" alt="" />
-            <img src="/assets/signal.svg" alt="" />
-            <img className="battery" src="/assets/battery.svg" alt="" />
-          </div>
-        </div>
+        <DeviceStatusBar time="3:09" />
 
         {/* Title Bar with STAGING badge & Action buttons */}
         <div className="customers-top-bar">
