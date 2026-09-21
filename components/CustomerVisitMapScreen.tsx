@@ -1,8 +1,7 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Customer } from './CustomersScreen';
-import { VisitLiveTimer } from './VisitLiveTimer';
 
 interface CustomerVisitMapScreenProps {
   customer: Customer;
@@ -43,9 +42,21 @@ export function CustomerVisitMapScreen({
   const [isOutOfRangeWarningOpen, setIsOutOfRangeWarningOpen] = useState(false);
   const [isCheckoutOutOfRangeOpen, setIsCheckoutOutOfRangeOpen] = useState(false);
   const [selectedAddressId, setSelectedAddressId] = useState<string>(() => {
+    if (customer.selectedShippingAddress?.id) {
+      return customer.selectedShippingAddress.id;
+    }
     const def = customer.shippingAddresses?.find((a) => a.isDefault);
     return def?.id || customer.shippingAddresses?.[0]?.id || '';
   });
+
+  useEffect(() => {
+    if (customer.selectedShippingAddress?.id) {
+      setSelectedAddressId(customer.selectedShippingAddress.id);
+    } else {
+      const def = customer.shippingAddresses?.find((a) => a.isDefault);
+      setSelectedAddressId(def?.id || customer.shippingAddresses?.[0]?.id || '');
+    }
+  }, [customer]);
   const [checkInStatus, setCheckInStatus] = useState<'idle' | 'loading' | 'success'>('idle');
   const [checkOutStatus, setCheckOutStatus] = useState<'idle' | 'loading' | 'success'>('idle');
 
@@ -357,51 +368,7 @@ export function CustomerVisitMapScreen({
             </div>
           </div>
 
-          {/* Staging Badge & GPS Toggle */}
-          <div className="map-staging-badge-row">
-            <span className="staging-pill-badge">STAGING</span>
-            {!isCheckedIn && (
-              <button
-                type="button"
-                className={`simulate-gps-btn ${
-                  effectiveDistance <= 30
-                    ? 'is-in-range'
-                    : effectiveDistance < 100
-                    ? 'is-mid-range'
-                    : 'is-out-range'
-                }`}
-                onClick={() => {
-                  let nextDist = 18;
-                  if (effectiveDistance <= 30) {
-                    nextDist = 45;
-                  } else if (effectiveDistance < 100) {
-                    nextDist = 120;
-                  } else if (effectiveDistance < 1000) {
-                    nextDist = 8000;
-                  } else {
-                    nextDist = 18;
-                  }
-                  setSimulatedDistance(nextDist);
-                  notify(
-                    `GPS simulated: ${formatDistance(nextDist)} (Check-in ${
-                      nextDist <= 30 ? '≤30m' : '>30m blocked'
-                    } • Check-out ${nextDist < 100 ? '<100m' : '≥100m blocked'})`,
-                  );
-                }}
-                title="Click to toggle GPS: 18m (≤30m) -> 45m (>30m) -> 120m (≥100m) -> 8km"
-              >
-                <span className="gps-dot" />
-                <span>GPS: {formatDistance(effectiveDistance)}</span>
-                <span className="gps-mode-tag">
-                  {effectiveDistance <= 30
-                    ? '≤30m'
-                    : effectiveDistance < 100
-                    ? '<100m'
-                    : '≥100m'}
-                </span>
-              </button>
-            )}
-          </div>
+
 
           {/* Floating GPS Target / Recenter Button */}
           {!isCheckedIn && (
@@ -595,36 +562,23 @@ export function CustomerVisitMapScreen({
               <span>Unplanned</span>
             </div>
 
-            {/* Time, Live Timer & Distance with 30m Range Indicator */}
+            {/* Time & Distance */}
             <div className="map-meta-item">
-              {isCheckedIn ? (
-                <>
-                  <VisitLiveTimer
-                    startTime={checkInStartTime || Date.now()}
-                    variant="map"
-                    onClick={onTrigger15MinAlert}
-                  />
-                  <span className="map-dot-sep">•</span>
-                </>
-              ) : (
-                <>
-                  <svg
-                    width="16"
-                    height="16"
-                    viewBox="0 0 24 24"
-                    fill="none"
-                    stroke="#64748b"
-                    strokeWidth="2"
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                  >
-                    <circle cx="12" cy="12" r="10" />
-                    <polyline points="12 6 12 12 16 14" />
-                  </svg>
-                  <span>08:59 AM</span>
-                  <span className="map-dot-sep">•</span>
-                </>
-              )}
+              <svg
+                width="16"
+                height="16"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="#64748b"
+                strokeWidth="2"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              >
+                <circle cx="12" cy="12" r="10" />
+                <polyline points="12 6 12 12 16 14" />
+              </svg>
+              <span>08:59 AM</span>
+              <span className="map-dot-sep">•</span>
               <svg
                 width="15"
                 height="15"
@@ -641,13 +595,21 @@ export function CustomerVisitMapScreen({
               <span className={isWithinCheckInRange ? 'map-distance-green' : 'map-distance-red'}>
                 {formatDistance(effectiveDistance)}
               </span>
-              <span className={`range-status-badge ${isWithinCheckInRange ? 'is-valid' : 'is-invalid'}`}>
-                {isWithinCheckInRange ? '≤30m In Range' : '>30m Out of Range'}
-              </span>
             </div>
 
-            {/* Customer name / outlet pin */}
-            <div className="map-meta-item">
+            {/* Selected Address */}
+            <div
+              className="map-meta-item"
+              onClick={() => {
+                if (customer.shippingAddresses && customer.shippingAddresses.length > 1) {
+                  setIsSelectShippingOpen(true);
+                }
+              }}
+              style={{
+                cursor: customer.shippingAddresses && customer.shippingAddresses.length > 1 ? 'pointer' : 'default',
+              }}
+              title={customer.shippingAddresses && customer.shippingAddresses.length > 1 ? 'Click to change shipping address' : undefined}
+            >
               <svg
                 width="16"
                 height="16"
@@ -657,11 +619,41 @@ export function CustomerVisitMapScreen({
                 strokeWidth="2"
                 strokeLinecap="round"
                 strokeLinejoin="round"
+                style={{ flexShrink: 0 }}
               >
                 <path d="M20 10c0 4.993-5.539 10.193-7.399 11.799a1 1 0 0 1-1.202 0C9.539 20.193 4 14.993 4 10a8 8 0 0 1 16 0" />
                 <circle cx="12" cy="10" r="3" />
               </svg>
-              <span>{customer.name}</span>
+              <span
+                style={{
+                  display: '-webkit-box',
+                  WebkitLineClamp: 2,
+                  WebkitBoxOrient: 'vertical',
+                  overflow: 'hidden',
+                  textOverflow: 'ellipsis',
+                  fontSize: '12.5px',
+                  color: '#4b5563',
+                  lineHeight: '1.35',
+                  flex: 1,
+                }}
+              >
+                {currentAddress?.address || customer.selectedShippingAddress?.address || customer.address}
+              </span>
+              {customer.shippingAddresses && customer.shippingAddresses.length > 1 && (
+                <svg
+                  width="14"
+                  height="14"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="#94a3b8"
+                  strokeWidth="2"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  style={{ flexShrink: 0, marginLeft: 2 }}
+                >
+                  <polyline points="9 18 15 12 9 6" />
+                </svg>
+              )}
             </div>
           </div>
 
@@ -710,8 +702,9 @@ export function CustomerVisitMapScreen({
                     strokeLinecap="round"
                     strokeLinejoin="round"
                   >
-                    <circle cx="12" cy="12" r="10" />
-                    <line x1="4.93" y1="4.93" x2="19.07" y2="19.07" />
+                    <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" />
+                    <polyline points="16 17 21 12 16 7" />
+                    <line x1="21" y1="12" x2="9" y2="12" />
                   </svg>
                   <span className="checkin-btn-label">Not Productive</span>
                 </div>
@@ -950,36 +943,20 @@ export function CustomerVisitMapScreen({
             onClick={(e) => e.stopPropagation()}
           >
             <div className={`checkout-confirm-icon-wrap ${isProductive ? '' : 'is-not-productive'}`}>
-              {isProductive ? (
-                <svg
-                  width="28"
-                  height="28"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="#ef4444"
-                  strokeWidth="2.2"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                >
-                  <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" />
-                  <polyline points="16 17 21 12 16 7" />
-                  <line x1="21" y1="12" x2="9" y2="12" />
-                </svg>
-              ) : (
-                <svg
-                  width="28"
-                  height="28"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="#ef4444"
-                  strokeWidth="2.2"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                >
-                  <circle cx="12" cy="12" r="10" />
-                  <line x1="4.93" y1="4.93" x2="19.07" y2="19.07" />
-                </svg>
-              )}
+              <svg
+                width="28"
+                height="28"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="#ef4444"
+                strokeWidth="2.2"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              >
+                <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" />
+                <polyline points="16 17 21 12 16 7" />
+                <line x1="21" y1="12" x2="9" y2="12" />
+              </svg>
             </div>
 
             <h3 className="checkout-confirm-title">

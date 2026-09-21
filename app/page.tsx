@@ -6,10 +6,30 @@ import { Button } from '@/components/ui/button';
 import { AddToCartScreen, ProductItem, PriceTier } from '@/components/AddToCartScreen';
 import { CartScreen, CartLineItem, LinePromotionsMap, ComboGroup } from '@/components/CartScreen';
 import { CustomersScreen, Customer, initialCustomers } from '@/components/CustomersScreen';
+import { VisitLiveTimer } from '@/components/VisitLiveTimer';
+import { CustomerModuleViews } from '@/components/CustomerModuleViews';
 import { formatMoney, formatQuantity } from '@/lib/format-number';
 
 type Category = 'All' | 'Vital' | 'Mee Chiet' | 'OM';
-type PrimaryTab = 'Record Stock' | 'Sales' | 'Issue';
+export type PrimaryTab =
+  | 'Sales'
+  | 'Record Stock'
+  | 'Merchandise'
+  | 'POSM'
+  | 'Insight'
+  | 'Issue'
+  | 'Photo Upload';
+
+export const PRIMARY_TABS: PrimaryTab[] = [
+  'Sales',
+  'Record Stock',
+  'Merchandise',
+  'POSM',
+  'Insight',
+  'Issue',
+  'Photo Upload',
+];
+
 type OrderView = 'History' | 'Sale Order';
 
 export type Product = ProductItem;
@@ -251,8 +271,10 @@ export default function Home() {
   const [isLandscape, setIsLandscape] = useState(false);
   const [deviceModel, setDeviceModel] = useState<'iphone-16-pro-max' | 'iphone-13'>('iphone-16-pro-max');
   const [checkedInCustomerIds, setCheckedInCustomerIds] = useState<string[]>([]);
+  const [checkInStartTimes, setCheckInStartTimes] = useState<Record<string, number>>({});
   const [activeMapCustomer, setActiveMapCustomer] = useState<Customer | null>(null);
   const [shouldSlideToOrder, setShouldSlideToOrder] = useState(false);
+  const [activeCallType, setActiveCallType] = useState<'Customer Call' | 'Sales Call' | null>(null);
   const [loadingCall, setLoadingCall] = useState<{
     customer: Customer;
     type: 'Customer Call' | 'Sales Call';
@@ -290,6 +312,8 @@ export default function Home() {
   };
 
   const openCallOrder = (cust: Customer, callType: 'Customer Call' | 'Sales Call') => {
+    setActiveCallType(callType);
+    setPrimaryTab('Sales');
     activateCustomerCart(cust);
     setActiveMapCustomer(null);
     setLoadingCall({ customer: cust, type: callType });
@@ -307,7 +331,12 @@ export default function Home() {
   };
 
   const handleCheckInCustomer = (cust: Customer) => {
+    setActiveCallType(null);
     setCheckedInCustomerIds((prev) => (prev.includes(cust.id) ? prev : [...prev, cust.id]));
+    setCheckInStartTimes((prev) => ({
+      ...prev,
+      [cust.id]: prev[cust.id] || Date.now(),
+    }));
     activateCustomerCart(cust);
     setActiveMapCustomer(cust);
     setActiveNavTab('Order');
@@ -328,6 +357,11 @@ export default function Home() {
       delete checkInTimersRef.current[cust.id];
     }
     setCheckedInCustomerIds((prev) => prev.filter((id) => id !== cust.id));
+    setCheckInStartTimes((prev) => {
+      const next = { ...prev };
+      delete next[cust.id];
+      return next;
+    });
     setActiveMapCustomer(null);
     setIsFifteenMinAlertOpen(false);
     setAlertCustomer(null);
@@ -431,6 +465,7 @@ export default function Home() {
     } else {
       setActiveMapCustomer(null);
     }
+    setActiveCallType(null);
     setShouldSlideToOrder(false);
     setActiveNavTab('Customer');
   }
@@ -446,6 +481,7 @@ export default function Home() {
 
   function handleDiscardOrder() {
     setShowLeaveCartConfirm(false);
+    setActiveCallType(null);
     setCounts(createEmptyCounts());
     setProductTiers(createEmptyProductTiers());
     setCartLines([]);
@@ -465,6 +501,7 @@ export default function Home() {
 
   function handleSaveDraftOrder() {
     setShowLeaveCartConfirm(false);
+    setActiveCallType(null);
     setCustomerCarts((current) => ({
       ...current,
       [selectedCustomer.id]: {
@@ -563,16 +600,27 @@ export default function Home() {
       }
     }
 
+    // Prune promotions for any removed UoM lines
+    const activeLineIds = new Set(nextCartLines.map((line) => line.id));
+    const basePromotions = customerCarts[selectedCustomer.id]?.linePromotions ?? linePromotions;
+    const cleanedLinePromotions: LinePromotionsMap = {};
+    Object.entries(basePromotions).forEach(([lineId, promos]) => {
+      if (activeLineIds.has(lineId)) {
+        cleanedLinePromotions[lineId] = promos;
+      }
+    });
+
     setCounts(nextCounts);
     setProductTiers(nextProductTiers);
     setCartLines(nextCartLines);
+    setLinePromotions(cleanedLinePromotions);
     setCustomerCarts((current) => ({
       ...current,
       [selectedCustomer.id]: {
         counts: nextCounts,
         productTiers: nextProductTiers,
         cartLines: nextCartLines,
-        linePromotions: current[selectedCustomer.id]?.linePromotions ?? linePromotions,
+        linePromotions: cleanedLinePromotions,
         selectedSchemeId: current[selectedCustomer.id]?.selectedSchemeId ?? selectedSchemeId,
         appliedGratisIds: current[selectedCustomer.id]?.appliedGratisIds ?? appliedGratisIds,
         appliedGratisQuantities: current[selectedCustomer.id]?.appliedGratisQuantities ?? appliedGratisQuantities,
@@ -751,6 +799,7 @@ export default function Home() {
         {activeNavTab === 'Customer' ? (
           <CustomersScreen
             onSelectCustomer={(cust) => {
+              setActiveCallType(null);
               activateCustomerCart(cust);
               setActiveMapCustomer(null);
               setShouldSlideToOrder(false);
@@ -766,6 +815,7 @@ export default function Home() {
             onNavigateTab={setActiveNavTab}
             activeNavTab={activeNavTab}
             cartItemCountsByCustomer={cartItemCountsByCustomer}
+            checkInStartTimes={checkInStartTimes}
             onTrigger15MinAlert={(cust) => {
               setAlertCustomer(cust || selectedCustomer);
               setIsFifteenMinAlertOpen(true);
@@ -795,120 +845,150 @@ export default function Home() {
                   <h1 className="outlet-name-title">{selectedCustomer?.name || 'Bun Sophear'}</h1>
                 </div>
 
-                <button
-                  type="button"
-                  className="search-button"
-                  aria-label="Search"
-                  onClick={() => notify('Search catalog opened')}
-                >
-                  <svg
-                    width="20"
-                    height="20"
-                    viewBox="0 0 24 24"
-                    fill="none"
-                    stroke="#B49A00"
-                    strokeWidth="2.5"
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
+                <div className="main-nav-right-group">
+                  {selectedCustomer && checkedInCustomerIds.includes(selectedCustomer.id) && (
+                    <VisitLiveTimer
+                      startTime={checkInStartTimes[selectedCustomer.id] || Date.now()}
+                      variant="header"
+                      showLimit={true}
+                      onClick={() => {
+                        setAlertCustomer(selectedCustomer);
+                        setIsFifteenMinAlertOpen(true);
+                      }}
+                    />
+                  )}
+                  <button
+                    type="button"
+                    className="search-button"
+                    aria-label="Search"
+                    onClick={() => notify('Search catalog opened')}
                   >
-                    <circle cx="11" cy="11" r="8" />
-                    <line x1="21" y1="21" x2="16.65" y2="16.65" />
-                  </svg>
-                </button>
+                    <svg
+                      width="20"
+                      height="20"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="#B49A00"
+                      strokeWidth="2.5"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                    >
+                      <circle cx="11" cy="11" r="8" />
+                      <line x1="21" y1="21" x2="16.65" y2="16.65" />
+                    </svg>
+                  </button>
+                </div>
               </div>
 
-              {/* Primary Top Level Navigation Tabs */}
-              <nav className="primary-sales-tabs" aria-label="Section navigation">
-                {(['Record Stock', 'Sales', 'Issue'] as PrimaryTab[]).map((tab) => (
-                  <button
-                    key={tab}
-                    type="button"
-                    className={primaryTab === tab ? 'is-active' : ''}
-                    onClick={() => setPrimaryTab(tab)}
-                  >
-                    {tab}
-                  </button>
-                ))}
-              </nav>
-
-              {/* Sub Navigation Tabs */}
-              <nav className="order-sub-tabs" aria-label="Order view options">
-                {(['History', 'Sale Order'] as OrderView[]).map((tab) => (
-                  <button
-                    key={tab}
-                    type="button"
-                    className={orderView === tab ? 'is-active' : ''}
-                    onClick={() => setOrderView(tab)}
-                  >
-                    {tab}
-                  </button>
-                ))}
-              </nav>
-
-              {/* Brand Filter Categories & Grid toggle */}
-              <div className="category-filter-row">
-                <div className="category-chips-list">
-                  {(['All', 'Vital', 'Mee Chiet', 'OM'] as Category[]).map((cat) => (
+              {/* Primary Top Level Navigation Tabs - hidden when in Customer Call or Sales Call */}
+              {!activeCallType && (
+                <nav className="primary-sales-tabs" aria-label="Section navigation">
+                  {PRIMARY_TABS.map((tab) => (
                     <button
-                      key={cat}
+                      key={tab}
                       type="button"
-                      className={`cat-chip-btn ${category === cat ? 'is-active' : ''}`}
-                      onClick={() => setCategory(cat)}
+                      className={primaryTab === tab ? 'is-active' : ''}
+                      onClick={() => setPrimaryTab(tab)}
                     >
-                      {cat}
+                      {tab}
                     </button>
+                  ))}
+                </nav>
+              )}
+
+              {/* Sub Navigation Tabs and Category Filter - active in Sales tab */}
+              {primaryTab === 'Sales' && (
+                <>
+                  <nav className="order-sub-tabs" aria-label="Order view options">
+                    {(['History', 'Sale Order'] as OrderView[]).map((tab) => (
+                      <button
+                        key={tab}
+                        type="button"
+                        className={orderView === tab ? 'is-active' : ''}
+                        onClick={() => setOrderView(tab)}
+                      >
+                        {tab}
+                      </button>
+                    ))}
+                  </nav>
+
+                  <div className="category-filter-row">
+                    <div className="category-chips-list">
+                      {(['All', 'Vital', 'Mee Chiet', 'OM'] as Category[]).map((cat) => (
+                        <button
+                          key={cat}
+                          type="button"
+                          className={`cat-chip-btn ${category === cat ? 'is-active' : ''}`}
+                          onClick={() => setCategory(cat)}
+                        >
+                          {cat}
+                        </button>
+                      ))}
+                    </div>
+
+                    <button
+                      type="button"
+                      className="grid-view-btn"
+                      aria-label="Toggle grid layout"
+                      onClick={() => notify('Layout toggled')}
+                    >
+                      <svg
+                        width="18"
+                        height="18"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="#B49A00"
+                        strokeWidth="2.5"
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                      >
+                        <rect x="3" y="3" width="7" height="7" rx="1.5" />
+                        <rect x="14" y="3" width="7" height="7" rx="1.5" />
+                        <rect x="3" y="14" width="7" height="7" rx="1.5" />
+                        <rect x="14" y="14" width="7" height="7" rx="1.5" />
+                      </svg>
+                    </button>
+                  </div>
+                </>
+              )}
+            </header>
+
+            {/* Main Content Area */}
+            {primaryTab === 'Sales' ? (
+              <>
+                {/* Product Cards List */}
+                <div className="product-cards-container" aria-live="polite">
+                  {visibleProducts.map((product) => (
+                    <ProductCard
+                      key={product.id}
+                      product={product}
+                      count={counts[product.id] ?? 0}
+                      onClick={() => handleOpenAddToCart(product)}
+                    />
                   ))}
                 </div>
 
-                <button
-                  type="button"
-                  className="grid-view-btn"
-                  aria-label="Toggle grid layout"
-                  onClick={() => notify('Layout toggled')}
-                >
-                  <svg
-                    width="18"
-                    height="18"
-                    viewBox="0 0 24 24"
-                    fill="none"
-                    stroke="#B49A00"
-                    strokeWidth="2.5"
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                  >
-                    <rect x="3" y="3" width="7" height="7" rx="1.5" />
-                    <rect x="14" y="3" width="7" height="7" rx="1.5" />
-                    <rect x="3" y="14" width="7" height="7" rx="1.5" />
-                    <rect x="14" y="14" width="7" height="7" rx="1.5" />
-                  </svg>
-                </button>
-              </div>
-            </header>
-
-            {/* Product Cards List */}
-            <div className="product-cards-container" aria-live="polite">
-              {visibleProducts.map((product) => (
-                <ProductCard
-                  key={product.id}
-                  product={product}
-                  count={counts[product.id] ?? 0}
-                  onClick={() => handleOpenAddToCart(product)}
-                />
-              ))}
-            </div>
-
-            {/* Floating View Your Cart Banner */}
-            {totalCartItems > 0 && !selectedProductForCart && !isCartOpen && (
-              <div className="floating-cart-banner-wrap">
-                <button
-                  type="button"
-                  className="floating-cart-banner"
-                  onClick={() => setIsCartOpen(true)}
-                >
-                  <span className="cart-banner-text">View your cart</span>
-                  <div className="cart-banner-count">{formatQuantity(totalCartItems)}</div>
-                </button>
-              </div>
+                {/* Floating View Your Cart Banner */}
+                {totalCartItems > 0 && !selectedProductForCart && !isCartOpen && (
+                  <div className="floating-cart-banner-wrap">
+                    <button
+                      type="button"
+                      className="floating-cart-banner"
+                      onClick={() => setIsCartOpen(true)}
+                    >
+                      <span className="cart-banner-text">View your cart</span>
+                      <div className="cart-banner-count">{formatQuantity(totalCartItems)}</div>
+                    </button>
+                  </div>
+                )}
+              </>
+            ) : (
+              <CustomerModuleViews
+                tab={primaryTab}
+                customer={selectedCustomer}
+                products={initialProducts}
+                notify={notify}
+              />
             )}
 
             {/* Enter Quantity / Add To Cart Screen */}
@@ -948,7 +1028,9 @@ export default function Home() {
                 cartLines={cartLines}
                 customerId={selectedCustomer.id}
                 customerName={selectedCustomer.name}
+                customerPhone={selectedCustomer.phone}
                 isGratisEligible={selectedCustomer.id === 'c-1'}
+                schemes={selectedCustomer?.schemes}
                 initialLinePromotions={linePromotions}
                 onUpdateLinePromotions={handleUpdateLinePromotions}
                 initialComboGroups={comboGroups}
@@ -1035,7 +1117,7 @@ export default function Home() {
               </div>
               <h2 id="leave-cart-title" className="checkout-confirm-title">Save Order as Draft?</h2>
               <p id="leave-cart-description" className="checkout-confirm-desc">
-                You have <span className="checkout-customer-highlight">{formatQuantity(totalCartItems)} {totalCartItems === 1 ? 'item' : 'items'}</span> in the cart for <span className="checkout-customer-highlight">{selectedCustomer?.name || 'this customer'}</span>. Would you like to save this order as a draft or discard it?
+                You have <span className="checkout-customer-highlight">{formatQuantity(totalCartItems)} {totalCartItems === 1 ? 'item' : 'items'}</span> in the cart. Would you like to save this order as a draft or discard it?
               </p>
               <div className="checkout-confirm-actions">
                 <button

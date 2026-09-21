@@ -36,10 +36,10 @@ export function AttachedPromotions({
         <div key={promo.id ?? `${promo.type}-${promo.productName}-${idx}`} className="attached-promo-card">
           <span className="attached-promo-name">{promo.productName}</span>
           <div className="attached-promo-pill-qty">
-            <TransactionTypeTag code={promo.type} />
             <span className="attached-promo-qty-text">
               +{formatQuantity(promo.quantity)} {promo.unit}
             </span>
+            <TransactionTypeTag code={promo.type} />
           </div>
         </div>
       ))}

@@ -48,20 +48,6 @@ export function VisitLiveTimer({
       title={`Visit Duration: ${timeFormatted} (15m checkout limit)`}
     >
       <span className="live-timer-dot" />
-      <svg
-        width="13"
-        height="13"
-        viewBox="0 0 24 24"
-        fill="none"
-        stroke="currentColor"
-        strokeWidth="2.4"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-        className="live-timer-clock-icon"
-      >
-        <circle cx="12" cy="12" r="10" />
-        <polyline points="12 6 12 12 16 14" />
-      </svg>
       <span className="live-timer-value">{timeFormatted}</span>
       {showLimit && variant !== 'compact' && (
         <span className="live-timer-limit">/ 15:00</span>

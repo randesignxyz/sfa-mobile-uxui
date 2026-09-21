@@ -30,3 +30,5 @@ export function TransactionTypeTag({
 
   return <span className={classes}>{code}</span>;
 }
+
+export { TransactionTypeTag as TransactionTypeBadge, TransactionTypeTag as TranTypeBadge };

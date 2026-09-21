@@ -31,6 +31,7 @@ interface OrderInvoicePreviewProps {
   discount: number;
   total: number;
   outletName?: string;
+  customerPhone?: string;
   onClose: () => void;
   onConfirmOrder?: () => void;
   onOrientationChange?: (isLandscape: boolean) => void;
@@ -44,6 +45,7 @@ export function OrderInvoicePreview({
   discount,
   total,
   outletName = 'Bun Sophear',
+  customerPhone,
   onClose,
   onConfirmOrder,
   onOrientationChange,
@@ -131,15 +133,28 @@ export function OrderInvoicePreview({
       });
     });
 
-    // Include applied Gratis promotions as dedicated bonus lines
-    appliedGratisPromotions.forEach((g, gIdx) => {
+    // Group applied Gratis promotions by remark so items with the same remark are together
+    const groupedGratis: GratisPreviewItem[] = [];
+    const remarkGroups = new Map<string, GratisPreviewItem[]>();
+    appliedGratisPromotions.forEach((g) => {
+      const rk = g.remark || 'ផលតិផលលើកទឹកចិត្តការលក់';
+      if (!remarkGroups.has(rk)) {
+        remarkGroups.set(rk, []);
+      }
+      remarkGroups.get(rk)!.push(g);
+    });
+    remarkGroups.forEach((items) => {
+      groupedGratis.push(...items);
+    });
+
+    groupedGratis.forEach((g, gIdx) => {
       const currentMainIndex = mainIndex++;
       rows.push({
         id: `gratis-${g.id || gIdx}`,
         index: currentMainIndex,
         name: g.productName,
         tag: g.type,
-        remark: g.remark || 'ផលតិផលលើកទឹកចិត្តការលក់ប្រចាំខែ 1,0,3 ឆ្នាំ 2026',
+        remark: g.remark || 'ផលតិផលលើកទឹកចិត្តការលក់',
         qty: g.quantity,
         unit: g.unit || 'Case',
         unitPrice: 0.0,
@@ -273,20 +288,20 @@ export function OrderInvoicePreview({
                 <span className="meta-row-value font-semibold">{outletName}</span>
               </div>
               <div className="meta-info-row">
-                <span className="meta-row-label">Customer Phone:</span>
-                <span className="meta-row-value">-</span>
+                <span className="meta-row-label">Phone:</span>
+                <span className="meta-row-value">{customerPhone || '-'}</span>
               </div>
             </div>
             <div className="meta-col">
               <div className="meta-info-row">
-                <span className="meta-row-label">Created By:</span>
-                <span className="meta-row-value">000366 - Horn Kakada</span>
+                <span className="meta-row-label">Total:</span>
+                <span className="meta-row-value">
+                  {formatQuantity(totalDistinctItems)} {totalDistinctItems === 1 ? 'item' : 'items'}
+                </span>
               </div>
               <div className="meta-info-row">
-                <span className="meta-row-label">Total Items:</span>
-                <span className="meta-row-value">
-                  {formatQuantity(totalQuantity)} ({formatQuantity(totalDistinctItems)} {totalDistinctItems === 1 ? 'item' : 'items'})
-                </span>
+                <span className="meta-row-label">Total Qty:</span>
+                <span className="meta-row-value">{formatQuantity(totalQuantity)}</span>
               </div>
             </div>
           </div>
@@ -312,7 +327,11 @@ export function OrderInvoicePreview({
                   return (
                     <Fragment key={row.id}>
                       {showRemark && (
-                        <tr className={`so-remark-header-row ${isFirstGratis ? 'is-first-gratis-row' : ''}`}>
+                        <tr
+                          className={`so-remark-header-row ${
+                            isFirstGratis ? 'is-first-gratis-row' : ''
+                          } ${row.isGratis ? 'is-gratis-remark-row' : ''}`}
+                        >
                           <td colSpan={5} className="so-remark-header-td">
                             <span className="so-remark-header-text">{row.remark}</span>
                           </td>
@@ -382,6 +401,12 @@ export function OrderInvoicePreview({
                 <span className="so-sum-val">${formatInvoiceMoney(subtotal)}</span>
               </div>
               <div className="so-summary-row">
+                <span className="so-sum-label">Discount</span>
+                <span className="so-sum-val">
+                  {discount > 0 ? `-$${formatInvoiceMoney(discount)}` : `$${formatInvoiceMoney(discount || 0)}`}
+                </span>
+              </div>
+              <div className="so-summary-row">
                 <span className="so-sum-label">VAT</span>
                 <span className="so-sum-val">$0.00</span>
               </div>
@@ -394,7 +419,7 @@ export function OrderInvoicePreview({
               </div>
               <div className="so-grand-total-row so-khr-row">
                 <span className="so-grand-label">Total (KHR)</span>
-                <span className="so-grand-val">៛{formatQuantity(Math.round(total * 4000))}</span>
+                <span className="so-grand-val">៛{formatInvoiceMoney(total * 4000)}</span>
               </div>
             </div>
           </div>

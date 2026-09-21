@@ -4,6 +4,7 @@ import { useState, useMemo, useRef, useEffect } from 'react';
 import { CustomerVisitMapScreen } from './CustomerVisitMapScreen';
 import { VisitLiveTimer } from './VisitLiveTimer';
 import { formatQuantity } from '@/lib/format-number';
+import type { PromotionScheme } from './CartScreen';
 
 export interface ShippingAddress {
   id: string;
@@ -25,6 +26,7 @@ export interface Customer {
   shippingAddresses?: ShippingAddress[];
   selectedShippingAddress?: ShippingAddress;
   image?: string;
+  schemes?: PromotionScheme[];
 }
 
 export const initialCustomers: Customer[] = [
@@ -55,6 +57,33 @@ export const initialCustomers: Customer[] = [
     type: 'Direct',
     address: 'In front of Khmer Soviet Friendship Hospital, Chamraeun Phal, Boeng Tumpun 1, Mean Chey, Phnom Penh',
     distanceMeters: 8000,
+    schemes: [
+      {
+        id: 'whole-sales',
+        name: 'Whole Sales',
+        description: 'Whole Sales Promotion Scheme',
+      },
+      {
+        id: 'key-account',
+        name: 'Key Account',
+        description: 'Key Account Promotion Scheme',
+      },
+      {
+        id: 'retail-scheme',
+        name: 'Retail Deal',
+        description: 'Retail Deal Promotion Scheme',
+      },
+      {
+        id: 'special-agent',
+        name: 'Special Agent',
+        description: 'Special Agent Promotion Scheme',
+      },
+      {
+        id: 'no-scheme',
+        name: 'No Scheme',
+        description: '',
+      },
+    ],
     shippingAddresses: [
       {
         id: 'addr-1',
@@ -901,7 +930,18 @@ export function CustomersScreen({
               }}
               onVisit={() => {
                 setSwipedCustomerId(null);
-                setActiveMapVisitCustomer(cust);
+                if (cust.shippingAddresses && cust.shippingAddresses.length > 1) {
+                  setVisitCustomer(cust);
+                } else {
+                  const defaultAddr =
+                    cust.shippingAddresses?.find((a) => a.isDefault) ||
+                    cust.shippingAddresses?.[0];
+                  setActiveMapVisitCustomer({
+                    ...cust,
+                    selectedShippingAddress: defaultAddr,
+                    address: defaultAddr?.address || cust.address,
+                  });
+                }
               }}
               onCustomerCall={() => {
                 if (onCustomerCall) {
@@ -1092,6 +1132,7 @@ export function CustomersScreen({
                       ...visitCustomer,
                       selectedShippingAddress: addr,
                       address: addr.address,
+                      distanceMeters: addr.distanceMeters ?? visitCustomer.distanceMeters,
                     };
                     setVisitCustomer(null);
                     setActiveMapVisitCustomer(cust);
@@ -1122,8 +1163,15 @@ export function CustomersScreen({
                           {visitCustomer.name} {addr.isDefault ? '(Default)' : `#${idx + 1}`}
                         </h3>
                         {addr.distanceMeters !== undefined && (
-                          <span className={`shipping-dist-badge ${addr.distanceMeters <= 30 ? 'is-in-range' : 'is-out-range'}`}>
-                            {addr.distanceMeters >= 1000 ? `${(addr.distanceMeters / 1000).toFixed(2)} km` : `${addr.distanceMeters} m`} • {addr.distanceMeters <= 30 ? '≤30m' : '>30m'}
+                          <span
+                            className={`shipping-dist-badge ${
+                              addr.distanceMeters <= 30 ? 'is-in-range' : 'is-out-range'
+                            }`}
+                          >
+                            {addr.distanceMeters >= 1000
+                              ? `${(addr.distanceMeters / 1000).toFixed(2)} km`
+                              : `${addr.distanceMeters} m`}{' '}
+                            • {addr.distanceMeters <= 30 ? '≤30m' : '>30m'}
                           </span>
                         )}
                       </div>
@@ -1140,6 +1188,7 @@ export function CustomersScreen({
                         ...visitCustomer,
                         selectedShippingAddress: addr,
                         address: addr.address,
+                        distanceMeters: addr.distanceMeters ?? visitCustomer.distanceMeters,
                       };
                       setVisitCustomer(null);
                       setActiveMapVisitCustomer(cust);
@@ -1170,6 +1219,7 @@ export function CustomersScreen({
           </div>
         </div>
       )}
+
 
       {toast && (
         <div className="toast-message" role="status">

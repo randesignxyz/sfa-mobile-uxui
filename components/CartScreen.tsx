@@ -3,8 +3,7 @@
 import { useMemo, useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { TransactionTypeTag } from '@/components/ui/transaction-type-tag';
-import { AttachedPromotions } from './AttachedPromotions';
+import { TransactionTypeTag, TransactionTypeBadge } from '@/components/ui/transaction-type-tag';
 import { PriceTier, ProductItem } from './AddToCartScreen';
 import { OrderInvoicePreview } from './OrderInvoicePreview';
 import { formatMoney, formatQuantity } from '@/lib/format-number';
@@ -42,6 +41,7 @@ interface CartScreenProps {
   cartLines: CartLineItem[];
   customerId?: string;
   customerName?: string;
+  customerPhone?: string;
   isGratisEligible?: boolean;
   onBack: () => void;
   onReviewOrder: () => void;
@@ -60,6 +60,7 @@ interface CartScreenProps {
   onUpdateAppliedGratisIds?: (ids: string[]) => void;
   initialAppliedGratisQuantities?: Record<string, number>;
   onUpdateAppliedGratisQuantities?: (quantities: Record<string, number>) => void;
+  schemes?: PromotionScheme[];
 }
 
 /** Placeholder SVG icon matching image placeholders */
@@ -487,7 +488,7 @@ type GratisPromotion = {
 const GRATIS_PROMOTIONS: GratisPromotion[] = [
   {
     id: 'gratis-vital-350-tdi',
-    productName: 'Vital 350 mL',
+    productName: 'Vital 350 ml',
     quantity: 5,
     unit: 'Case',
     type: 'TDI',
@@ -501,12 +502,21 @@ const GRATIS_PROMOTIONS: GratisPromotion[] = [
     type: 'TDI',
     remark: 'ផលតិផលលើកទឹកចិត្តការលក់ប្រចាំខែ 1,0,3 ឆ្នាំ 2026',
   },
+  {
+    id: 'gratis-vital-500-tdi',
+    productName: 'Vital 500 ml',
+    quantity: 2,
+    unit: 'Case',
+    type: 'TDI',
+    remark: 'ផលតិផលលើកទឹកចិត្តការលក់',
+  },
 ];
 
 export function CartScreen({
   cartLines,
   customerId,
   customerName = 'Bun Sophear',
+  customerPhone,
   isGratisEligible = false,
   onBack,
   onReviewOrder,
@@ -525,6 +535,7 @@ export function CartScreen({
   onUpdateAppliedGratisIds,
   initialAppliedGratisQuantities,
   onUpdateAppliedGratisQuantities,
+  schemes,
 }: CartScreenProps) {
   const [toast, setToast] = useState('');
   const [isManualPromoMode, setIsManualPromoMode] = useState(false);
@@ -571,9 +582,16 @@ export function CartScreen({
     initialLinePromotions ?? {},
   );
 
+  const availableSchemesList = useMemo(() => schemes ?? PROMOTION_SCHEMES, [schemes]);
+  const activeSchemes = useMemo(
+    () => availableSchemesList.filter((s) => s.id !== 'no-scheme'),
+    [availableSchemesList],
+  );
+  const canChangeScheme = activeSchemes.length > 1;
+
   const selectedScheme = useMemo(() => {
-    return PROMOTION_SCHEMES.find((scheme) => scheme.id === selectedSchemeId);
-  }, [selectedSchemeId]);
+    return availableSchemesList.find((scheme) => scheme.id === selectedSchemeId);
+  }, [availableSchemesList, selectedSchemeId]);
   const hasActiveScheme = Boolean(selectedScheme && selectedScheme.id !== 'no-scheme');
 
   function notify(msg: string) {
@@ -641,10 +659,10 @@ export function CartScreen({
 
   const filteredSchemes = useMemo(() => {
     const q = searchSchemeQuery.trim().toLowerCase();
-    const schemes = PROMOTION_SCHEMES.filter((s) => s.id !== 'no-scheme');
-    if (!q) return schemes;
-    return schemes.filter((s) => s.name.toLowerCase().includes(q));
-  }, [searchSchemeQuery]);
+    const list = availableSchemesList.filter((s) => s.id !== 'no-scheme');
+    if (!q) return list;
+    return list.filter((s) => s.name.toLowerCase().includes(q));
+  }, [availableSchemesList, searchSchemeQuery]);
 
   const handleApplyScheme = (scheme: PromotionScheme) => {
     setSelectedSchemeId(scheme.id);
@@ -804,6 +822,30 @@ export function CartScreen({
     setIsPromoDetailsModalOpen(false);
     setIsManualPromoMode(false);
     setSelectedLineIds([]);
+  };
+
+  const handleRemoveLinePromotion = (
+    lineId: string,
+    promoProductName: string,
+    promoType: PromoTypeCode,
+  ) => {
+    setLinePromotions((prev) => {
+      const next: LinePromotionsMap = { ...prev };
+      const currentList = next[lineId] || [];
+      const updated = currentList.filter(
+        (p) => !(p.productName === promoProductName && p.type === promoType),
+      );
+      if (updated.length === 0) {
+        delete next[lineId];
+      } else {
+        next[lineId] = updated;
+      }
+      if (onUpdateLinePromotions) {
+        onUpdateLinePromotions(next);
+      }
+      return next;
+    });
+    notify('Promotion removed');
   };
 
   const groupedCartProducts = useMemo(() => {
@@ -1013,7 +1055,7 @@ export function CartScreen({
             <div className="promotion-gratis-row">
               <div className="promotions-info">
                 <div className="promotions-title-row">
-                  <span className="promotions-label">Promotions</span>
+                  <span className="promotions-label">Scheme</span>
                   <span className="promotions-count">
                     ({hasActiveScheme ? 1 : 0})
                   </span>
@@ -1028,12 +1070,14 @@ export function CartScreen({
               <button
                 type="button"
                 className="select-promotion-btn"
+                disabled={!canChangeScheme}
                 onClick={() => {
+                  if (!canChangeScheme) return;
                   if (onSelectPromotion) onSelectPromotion();
                   setIsSelectSchemeModalOpen(true);
                 }}
               >
-                Select Promo
+                Select Scheme
               </button>
             </div>
 
@@ -1061,34 +1105,44 @@ export function CartScreen({
 
                   {appliedGratisIds.length > 0 && (
                     <div className="applied-gratis-list">
-                      {appliedGratisIds.map((gratisId, gIdx) => {
-                        const promotion = GRATIS_PROMOTIONS.find((item) => item.id === gratisId);
-                        if (!promotion) return null;
-                        const prevPromotion =
-                          gIdx > 0
-                            ? GRATIS_PROMOTIONS.find((item) => item.id === appliedGratisIds[gIdx - 1])
-                            : null;
-                        const showRemark = Boolean(
-                          promotion.remark &&
-                            (!prevPromotion || prevPromotion.remark !== promotion.remark),
-                        );
-                        return (
-                          <div className="applied-gratis-row" key={gratisId}>
-                            <div className="applied-gratis-product-info">
-                              {showRemark && (
-                                <span className="applied-gratis-remark">{promotion.remark}</span>
-                              )}
-                              <span className="applied-gratis-product">{promotion.productName}</span>
+                      {(() => {
+                        const appliedList = appliedGratisIds
+                          .map((id) => GRATIS_PROMOTIONS.find((item) => item.id === id))
+                          .filter((p): p is GratisPromotion => Boolean(p));
+
+                        const groupedByRemark: GratisPromotion[] = [];
+                        const groups = new Map<string, GratisPromotion[]>();
+                        appliedList.forEach((p) => {
+                          const rk = p.remark || '';
+                          if (!groups.has(rk)) groups.set(rk, []);
+                          groups.get(rk)!.push(p);
+                        });
+                        groups.forEach((items) => groupedByRemark.push(...items));
+
+                        return groupedByRemark.map((promotion, gIdx) => {
+                          const prevPromotion = gIdx > 0 ? groupedByRemark[gIdx - 1] : null;
+                          const showRemark = Boolean(
+                            promotion.remark &&
+                              (!prevPromotion || prevPromotion.remark !== promotion.remark),
+                          );
+                          return (
+                            <div className="applied-gratis-row" key={promotion.id}>
+                              <div className="applied-gratis-product-info">
+                                {showRemark && (
+                                  <span className="applied-gratis-remark">{promotion.remark}</span>
+                                )}
+                                <span className="applied-gratis-product">{promotion.productName}</span>
+                              </div>
+                              <div className="applied-gratis-details">
+                                <TransactionTypeTag code={promotion.type} />
+                                <span className="applied-gratis-quantity">
+                                  +{formatQuantity(appliedGratisQuantities[promotion.id] ?? promotion.quantity)} {promotion.unit}
+                                </span>
+                              </div>
                             </div>
-                            <div className="applied-gratis-details">
-                              <TransactionTypeTag code={promotion.type} />
-                              <span className="applied-gratis-quantity">
-                                +{formatQuantity(appliedGratisQuantities[gratisId] ?? promotion.quantity)} {promotion.unit}
-                              </span>
-                            </div>
-                          </div>
-                        );
-                      })}
+                          );
+                        });
+                      })()}
                     </div>
                   )}
                 </div>
@@ -1128,59 +1182,141 @@ export function CartScreen({
                         </div>
                       </div>
 
-                      {/* UoM Rows with individual selection */}
+                      {/* UoM Rows with individual selection and linked promotions */}
                       {group.lines.map((line) => {
                         const isLineSelected = selectedLineIds.includes(line.id);
+                        const linePromos = displayedLinePromotions[line.id] || [];
 
                         return (
-                          <div
-                            key={line.id}
-                            className={`cart-item-meta-row ${
-                              isManualPromoMode ? 'is-uom-selectable' : ''
-                            } ${isLineSelected ? 'is-uom-selected' : ''}`}
-                            onClick={() => {
-                              if (isManualPromoMode) {
-                                if (isLineSelected) {
-                                  setSelectedLineIds((prev) =>
-                                    prev.filter((id) => id !== line.id),
-                                  );
-                                } else {
-                                  setSelectedLineIds((prev) => [...prev, line.id]);
+                          <div key={line.id} className="cart-uom-item-block">
+                            <div
+                              className={`cart-item-meta-row ${
+                                isManualPromoMode ? 'is-uom-selectable' : ''
+                              } ${isLineSelected ? 'is-uom-selected' : ''}`}
+                              onClick={() => {
+                                if (isManualPromoMode) {
+                                  if (isLineSelected) {
+                                    setSelectedLineIds((prev) =>
+                                      prev.filter((id) => id !== line.id),
+                                    );
+                                  } else {
+                                    setSelectedLineIds((prev) => [...prev, line.id]);
+                                  }
                                 }
-                              }
-                            }}
-                          >
-                            <div className="meta-left">
-                              {isManualPromoMode && (
-                                <div
-                                  className={`manual-promo-checkbox ${
-                                    isLineSelected ? 'is-selected' : ''
-                                  }`}
-                                  aria-label={isLineSelected ? 'Selected' : 'Not selected'}
-                                >
-                                  {isLineSelected && (
-                                    <svg width="13" height="13" viewBox="0 0 14 14" fill="none">
-                                      <path
-                                        d="M2.5 7.5L5.5 10.5L11.5 3.5"
-                                        stroke="#ffffff"
-                                        strokeWidth="2.2"
-                                        strokeLinecap="round"
-                                        strokeLinejoin="round"
-                                      />
-                                    </svg>
-                                  )}
-                                </div>
-                              )}
+                              }}
+                            >
+                              <div className="meta-left">
+                                {isManualPromoMode && (
+                                  <div
+                                    className={`manual-promo-checkbox ${
+                                      isLineSelected ? 'is-selected' : ''
+                                    }`}
+                                    aria-label={isLineSelected ? 'Selected' : 'Not selected'}
+                                  >
+                                    {isLineSelected && (
+                                      <svg width="13" height="13" viewBox="0 0 14 14" fill="none">
+                                        <path
+                                          d="M2.5 7.5L5.5 10.5L11.5 3.5"
+                                          stroke="#ffffff"
+                                          strokeWidth="2.2"
+                                          strokeLinecap="round"
+                                          strokeLinejoin="round"
+                                        />
+                                      </svg>
+                                    )}
+                                  </div>
+                                )}
 
-                              <span className="meta-rate-calc">
-                                ${formatMoney(line.unitPrice)} x {formatQuantity(line.quantity)} {line.unit || 'Case'}
+                                <span className="meta-rate-calc">
+                                  ${formatMoney(line.unitPrice)} x {formatQuantity(line.quantity)} {line.unit || 'Case'}
+                                </span>
+                                <TransactionTypeTag code={line.tier} />
+                              </div>
+
+                              <span className="meta-right-price">
+                                ${formatMoney(line.totalPrice)}
                               </span>
-                              <TransactionTypeTag code={line.tier} />
                             </div>
 
-                            <span className="meta-right-price">
-                              ${formatMoney(line.totalPrice)}
-                            </span>
+                            {/* Attached Promotions directly linked under this specific UoM */}
+                            {linePromos.length > 0 && (
+                              <div
+                                className="uom-attached-promotions"
+                                aria-label={`Promotions for ${line.quantity} ${line.unit || 'Case'}`}
+                              >
+                                {linePromos.map((promo, pIdx) => {
+                                  const isManual = (linePromotions[line.id] || []).some(
+                                    (mp) => mp.productName === promo.productName && mp.type === promo.type,
+                                  );
+
+                                  return (
+                                    <div
+                                      key={`${promo.type}-${promo.productName}-${pIdx}`}
+                                      className="uom-promo-row"
+                                    >
+                                      <div className="uom-promo-left">
+                                        <svg
+                                          className="uom-promo-branch-icon"
+                                          width="14"
+                                          height="14"
+                                          viewBox="0 0 16 16"
+                                          fill="none"
+                                          aria-hidden="true"
+                                        >
+                                          <path
+                                            d="M3 2v7a3 3 0 0 0 3 3h7"
+                                            stroke="#9ca3af"
+                                            strokeWidth="1.6"
+                                            strokeLinecap="round"
+                                            strokeLinejoin="round"
+                                          />
+                                        </svg>
+                                        <span className="uom-promo-name" title={promo.productName}>
+                                          {promo.productName}
+                                        </span>
+                                      </div>
+
+                                      <div className="uom-promo-right">
+                                        <span className="uom-promo-qty">
+                                          +{formatQuantity(promo.quantity)} {promo.unit}
+                                        </span>
+                                        <TransactionTypeTag code={promo.type} />
+                                        {isManual && (
+                                          <button
+                                            type="button"
+                                            className="uom-promo-remove-btn"
+                                            aria-label={`Remove promotion ${promo.productName}`}
+                                            title="Remove promotion"
+                                            onClick={(e) => {
+                                              e.stopPropagation();
+                                              handleRemoveLinePromotion(
+                                                line.id,
+                                                promo.productName,
+                                                promo.type,
+                                              );
+                                            }}
+                                          >
+                                            <svg
+                                              width="12"
+                                              height="12"
+                                              viewBox="0 0 24 24"
+                                              fill="none"
+                                              stroke="currentColor"
+                                              strokeWidth="2.4"
+                                              strokeLinecap="round"
+                                              strokeLinejoin="round"
+                                            >
+                                              <line x1="18" y1="6" x2="6" y2="18" />
+                                              <line x1="6" y1="6" x2="18" y2="18" />
+                                            </svg>
+                                          </button>
+                                        )}
+                                      </div>
+                                    </div>
+                                  );
+                                })}
+                              </div>
+                            )}
                           </div>
                         );
                       })}
@@ -1188,20 +1324,13 @@ export function CartScreen({
                   );
                 })}
 
-                {/* Amount Row (rendered if multi-product combo or multi-UoM single product) */}
-                {(card.isCombo || (!card.isCombo && card.productGroups[0]?.lines.length > 1)) && (
-                  <div className="cart-item-amount-row">
-                    <span className="amount-label">Amount</span>
-                    <span className="amount-val">
-                      ${formatMoney(card.totalAmount)}
-                    </span>
-                  </div>
-                )}
-
-                {/* Attached Promotions (rendered at bottom of product card) */}
-                {card.promotions.length > 0 && (
-                  <AttachedPromotions promotions={card.promotions} />
-                )}
+                {/* Amount Row (always displayed on every item card) */}
+                <div className="cart-item-amount-row">
+                  <span className="amount-label">Amount</span>
+                  <span className="amount-val">
+                    ${formatMoney(card.totalAmount)}
+                  </span>
+                </div>
               </article>
             );
           })}
@@ -1643,12 +1772,12 @@ export function CartScreen({
             className="select-promo-modal-sheet scheme-modal-sheet"
             onClick={(e) => e.stopPropagation()}
             role="dialog"
-            aria-label="Select Promotion"
+            aria-label="Select Scheme"
           >
             <div className="sheet-drag-handle" />
 
             <div className="select-promo-modal-header">
-              <h2 className="modal-title-text select-scheme-title">Select Promotion</h2>
+              <h2 className="modal-title-text select-scheme-title">Select Scheme</h2>
               <div className="gratis-modal-header-actions">
                 {selectedSchemeId && (
                   <button
@@ -1659,7 +1788,7 @@ export function CartScreen({
                       if (onUpdateSelectedSchemeId) {
                         onUpdateSelectedSchemeId('');
                       }
-                      notify('Promotion cleared');
+                      notify('Scheme cleared');
                     }}
                   >
                     Clear
@@ -1801,14 +1930,11 @@ export function CartScreen({
                     type="button"
                     className="gratis-apply-all-btn"
                     onClick={() => {
-                      const applicablePromotions = GRATIS_PROMOTIONS.filter(
-                        (promotion) => (gratisQuantities[promotion.id] ?? promotion.quantity) > 0,
-                      );
-                      const nextIds = applicablePromotions.map((promotion) => promotion.id);
+                      const nextIds = GRATIS_PROMOTIONS.map((promotion) => promotion.id);
                       const nextQuantities = Object.fromEntries(
-                        applicablePromotions.map((promotion) => [
+                        GRATIS_PROMOTIONS.map((promotion) => [
                           promotion.id,
-                          gratisQuantities[promotion.id] ?? promotion.quantity,
+                          promotion.quantity,
                         ]),
                       );
                       setAppliedGratisIds(nextIds);
@@ -1839,9 +1965,6 @@ export function CartScreen({
             <div className="gratis-promotion-list">
               {GRATIS_PROMOTIONS.map((promotion) => {
                 const isApplied = appliedGratisIds.includes(promotion.id);
-                const quantity = gratisQuantities[promotion.id] ?? promotion.quantity;
-                const hasQuantityChanged =
-                  isApplied && quantity !== appliedGratisQuantities[promotion.id];
                 return (
                   <article
                     className={`gratis-promotion-card ${isApplied ? 'is-applied' : ''}`}
@@ -1849,24 +1972,10 @@ export function CartScreen({
                   >
                     <div className="gratis-promotion-info">
                       <p className="gratis-remark-line">{promotion.remark || 'ផលតិផលលើកទឹកចិត្តការលក់ប្រចាំខែ 1,0,3 ឆ្នាំ 2026'}</p>
-                      <h3>{promotion.productName}</h3>
-                      <div className="gratis-transaction-line">
-                        <TransactionTypeTag code={promotion.type} />
-                        <Input
-                          type="text"
-                          inputMode="numeric"
-                          pattern="[0-9]*"
-                          value={quantity}
-                          onChange={(event) =>
-                            setGratisQuantities((current) => ({
-                              ...current,
-                              [promotion.id]: Number(event.target.value.replace(/[^0-9]/g, '')) || 0,
-                            }))
-                          }
-                          className="gratis-quantity-input"
-                          aria-label={`${promotion.productName} gratis quantity`}
-                        />
-                        <span className="gratis-unit-label">{promotion.unit}</span>
+                      <div className="gratis-item-row">
+                        <span className="gratis-item-title">{promotion.productName}</span>
+                        <span className="gratis-item-qty">+{formatQuantity(promotion.quantity)} {promotion.unit}</span>
+                        <TransactionTypeBadge code={promotion.type} />
                       </div>
                     </div>
                     <div className="gratis-card-actions">
@@ -1891,23 +2000,21 @@ export function CartScreen({
                       <button
                         type="button"
                         className={`scheme-apply-btn ${isApplied ? 'is-applied' : ''}`}
-                        disabled={quantity === 0 || (isApplied && !hasQuantityChanged)}
                         onClick={() => {
-                          const nextIds = appliedGratisIds.includes(promotion.id)
-                            ? appliedGratisIds
-                            : [...appliedGratisIds, promotion.id];
+                          if (isApplied) return;
+                          const nextIds = [...appliedGratisIds, promotion.id];
                           const nextQuantities = {
                             ...appliedGratisQuantities,
-                            [promotion.id]: quantity,
+                            [promotion.id]: promotion.quantity,
                           };
                           setAppliedGratisIds(nextIds);
                           setAppliedGratisQuantities(nextQuantities);
                           if (onUpdateAppliedGratisIds) onUpdateAppliedGratisIds(nextIds);
                           if (onUpdateAppliedGratisQuantities) onUpdateAppliedGratisQuantities(nextQuantities);
-                          notify(isApplied ? 'Gratis quantity updated' : 'Gratis promotion applied');
+                          notify('Gratis promotion applied');
                         }}
                       >
-                        {isApplied ? (hasQuantityChanged ? 'Update' : 'Applied') : 'Apply'}
+                        {isApplied ? 'Applied' : 'Apply'}
                       </button>
                     </div>
                   </article>
@@ -1941,6 +2048,7 @@ export function CartScreen({
           discount={discount}
           total={total}
           outletName={customerName || 'Bun Sophear'}
+          customerPhone={customerPhone || (customerId === 'c-1' ? '012 345678' : '089 554433')}
           onClose={() => {
             if (onOrientationChange) onOrientationChange(false);
             setIsInvoicePreviewOpen(false);
